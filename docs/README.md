@@ -7,6 +7,8 @@ Project documentation for CareCrypt.
 - [ANALYTICS.md](ANALYTICS.md): ADMIN aggregate analytics, privacy rules and dashboard
 - [SMARTCARE_WORKSPACE.md](SMARTCARE_WORKSPACE.md): the SmartCare Assist workspace (body map, symptom table, voice, monitor, results) and what was ported from the original project
 - [WORKFLOW.md](WORKFLOW.md): the integrated end-to-end workflow, inference detection, security console, demo script
+- [OVERVIEW.md](OVERVIEW.md): plain-language guide to the features, roles and architecture
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md): common setup problems and Windows/PowerShell notes
 - Phase 0 analysis of the existing SmartCare Assist codebase:
   https://claude.ai/artifact/31zHqhuK8Tr7AC9mZZ4pEX (private; ask the owner for access)
 
