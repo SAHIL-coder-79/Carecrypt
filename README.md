@@ -197,3 +197,15 @@ Request and response details, status codes and how to protect routes with
 | `VITE_DEV_PORT` | `5173` | Dev server port |
 | `VITE_API_PROXY_TARGET` | `http://localhost:4000` | Where the dev server proxies `/api` |
 | `VITE_API_BASE_URL` | empty | API base URL for the browser; empty means same-origin `/api` |
+## Documentation
+
+| Document | What it covers |
+| --- | --- |
+| [docs/OVERVIEW.md](docs/OVERVIEW.md) | Features, roles and how the pieces fit together, in plain language |
+| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Test accounts, API details, RBAC, consent, QR, running tests |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common setup problems, Windows and PowerShell notes |
+| [docs/WORKFLOW.md](docs/WORKFLOW.md) | End-to-end workflow and demo script |
+| [docs/ANALYTICS.md](docs/ANALYTICS.md) | Aggregate analytics and small-group suppression |
+| [docs/SMARTCARE_INTEGRATION.md](docs/SMARTCARE_INTEGRATION.md), [docs/SMARTCARE_WORKSPACE.md](docs/SMARTCARE_WORKSPACE.md) | SmartCare Assist |
+
+Having problems running the project? See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
