@@ -1,0 +1,8 @@
+{
+  "name": "carecrypt-smartcare",
+  "version": "2.0.0",
+  "private": true,
+  "description": "SmartCare Assist rule-based clinical decision-support engines, packaged for CareCrypt",
+  "type": "commonjs",
+  "main": "index.js"
+}
