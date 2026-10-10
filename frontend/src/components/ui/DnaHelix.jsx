@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-export function DnaHelix() {
+export function DnaHelix({ className = "absolute inset-0 pointer-events-none opacity-80", style = {} }) {
   const mountRef = useRef(null);
 
   useEffect(() => {
@@ -138,8 +138,8 @@ export function DnaHelix() {
   return (
     <div 
       ref={mountRef} 
-      className="absolute inset-0 pointer-events-none opacity-50" 
-      style={{ zIndex: 0, right: '-20%', top: '-10%', overflow: 'hidden' }} 
+      className={className}
+      style={{ zIndex: 0, overflow: 'hidden', ...style }} 
     />
   );
 }

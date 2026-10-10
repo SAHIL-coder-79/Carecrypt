@@ -4,6 +4,7 @@ import { useAuth } from '../auth/context.js'
 import { ROLE_LABEL } from '../lib/format.js'
 import { navigationFor } from '../lib/navigation.js'
 import { CloseIcon, HeartPulseIcon, LogOutIcon, MenuIcon } from './icons.jsx'
+import { DnaHelix } from './ui/DnaHelix.jsx'
 
 const ROLE_TONE = {
   CLINICIAN: 'bg-teal-50 text-teal-800 ring-teal-200',
@@ -128,33 +129,39 @@ function Sidebar({ onClose }) {
         )}
       </div>
 
-      <nav aria-label="Main" className="flex-1 overflow-y-auto px-3">
-        <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-          {ROLE_LABEL[user?.role] ?? 'Menu'}
-        </p>
-        <ul className="space-y-0.5">
-          {items.map(({ to, label, icon: Icon }) => (
-            <li key={to}>
-              <NavLink
-                to={to}
-                className={({ isActive }) =>
-                  `group flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-teal-600 ${
-                    isActive ? 'bg-teal-50 text-teal-900' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <Icon className={`h-5 w-5 ${isActive ? 'text-teal-700' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                    {label}
-                  </>
-                )}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-
-
+      <nav aria-label="Main" className="flex-1 overflow-y-auto px-3 flex flex-col">
+        <div>
+          <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            {ROLE_LABEL[user?.role] ?? 'Menu'}
+          </p>
+          <ul className="space-y-0.5">
+            {items.map(({ to, label, icon: Icon }) => (
+              <li key={to}>
+                <NavLink
+                  to={to}
+                  className={({ isActive }) =>
+                    `group flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-teal-600 ${
+                      isActive ? 'bg-teal-50 text-teal-900' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Icon className={`h-5 w-5 ${isActive ? 'text-teal-700' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                      {label}
+                    </>
+                  )}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+        
+        {/* The DNA Helix fills the remaining space in the sidebar */}
+        <div className="relative flex-1 mt-6 mx-2 mb-4 rounded-xl border border-slate-200 bg-slate-900/5 shadow-inner overflow-hidden flex flex-col items-center justify-end pb-4">
+          <DnaHelix className="absolute inset-0 opacity-40 pointer-events-auto" />
+          <p className="relative z-10 text-[10px] font-semibold tracking-widest text-slate-400 uppercase">CareCrypt Core</p>
+        </div>
       </nav>
 
       <div className="border-t border-slate-200 px-4 py-4">
