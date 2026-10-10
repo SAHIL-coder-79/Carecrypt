@@ -123,7 +123,8 @@ INSERT INTO clinical.facilities (code, name, facility_type, city, district, stat
 -- -----------------------------------------------------------------------------
 
 INSERT INTO identity.users (email, password_hash, role, display_name, last_login_at) VALUES
-  ('admin.priya@carecrypt.example',     crypt('CareCrypt@2026', gen_salt('bf', 10)), 'ADMIN',          'Priya Admin (Demo)',        '2026-09-25 09:05+05:30'),
+  ('demo.admin@carecrypt.example',      crypt('CareCrypt@2026', gen_salt('bf', 10)), 'ADMIN',          'Demo Admin (Synthetic)',    '2026-09-25 09:05+05:30'),
+  ('admin.priya@carecrypt.example',     crypt('CareCrypt@2026', gen_salt('bf', 10)), 'ADMIN',          'Priya Admin (Real)',        '2026-09-25 09:05+05:30'),
   ('admin.rahul@carecrypt.example',     crypt('CareCrypt@2026', gen_salt('bf', 10)), 'ADMIN',          'Rahul Admin (Demo)',        '2026-09-24 17:40+05:30'),
   ('security.officer@carecrypt.example',crypt('CareCrypt@2026', gen_salt('bf', 10)), 'SECURITY_ADMIN', 'Security Officer (Demo)',   '2026-09-25 11:20+05:30'),
   ('dr.aditi.ranade@carecrypt.example', crypt('CareCrypt@2026', gen_salt('bf', 10)), 'CLINICIAN',      'Dr. Aditi Ranade',          '2026-09-25 09:58+05:30'),

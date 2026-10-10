@@ -161,8 +161,8 @@ router.get('/outbreak-detection', async (req, res) => {
   if (!q.district || !q.category) {
     throw validationError([{ field: 'district/category', message: 'Both district and category are required.' }])
   }
-  
-  const result = await getOutbreakDetection(q.district, q.category)
+  const isDemo = req.user?.email === 'demo.admin@carecrypt.example'
+  const result = await getOutbreakDetection(null, q.district, q.category, isDemo)
   await audit(req, 'outbreak-detection', { district: q.district, category: q.category }, 0)
   
   res.json(result)

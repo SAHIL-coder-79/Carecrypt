@@ -14,7 +14,8 @@ Password for every account: `CareCrypt@2026`
 
 | Role | Email | Notes |
 | --- | --- | --- |
-| ADMIN | `admin.priya@carecrypt.example` | |
+| ADMIN | `demo.admin@carecrypt.example` | Shows synthetic outbreak data for demonstrations |
+| ADMIN | `admin.priya@carecrypt.example` | Shows real database data only |
 | ADMIN | `admin.rahul@carecrypt.example` | The test suite locks and disables this account temporarily |
 | SECURITY_ADMIN | `security.officer@carecrypt.example` | |
 | CLINICIAN | `dr.aditi.ranade@carecrypt.example` | General Medicine, Pune |

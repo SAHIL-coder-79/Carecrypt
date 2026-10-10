@@ -39,7 +39,7 @@ function getSyntheticHistory() {
   return history
 }
 
-export async function getOutbreakDetection(state, district, category) {
+export async function getOutbreakDetection(state, district, category, isDemo = false) {
   // Try to use privacy-approved aggregate histories from database
   // The analytics.location_category gives all time totals, but we need monthly.
   // We can query analytics.cases_by_location (which is monthly maybe? Wait, no, cases_monthly).
@@ -58,12 +58,12 @@ export async function getOutbreakDetection(state, district, category) {
     `, [district, category])
     rows = res.rows
   } catch (err) {
-    // Table might not exist or be accessible, fallback to synthetic
+    // Table might not exist or be accessible, fallback handled below
   }
 
-  // If no real data, use synthetic
+  // If no real data, use synthetic ONLY if isDemo is true
   let dataPoints = []
-  if (rows.length < 6) {
+  if (rows.length < 6 && isDemo) {
     dataPoints = getSyntheticHistory()
   } else {
     dataPoints = rows.map(r => ({
