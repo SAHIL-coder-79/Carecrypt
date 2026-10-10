@@ -1,0 +1,448 @@
+/* ===================== 1. DESIGN TOKENS ===================== */
+:root {
+  --steel: #34495E;
+  --slate: #263442;
+  --deep: #233747;
+  --blush: #E6A7B8;
+  --blush-p: #F4C8D4;
+  --blush-l: #FFF4F6;
+  --bg: #FFF4F6;
+  --card: #FFFFFF;
+  --ink: #263442;
+  --mute: #5a6a80;
+  --line: #7f8ca0;
+  --hair: #E4DCE0;
+  --err: #b42318;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b2530;
+    --card: #222f3c;
+    --ink: #f1f4f8;
+    --mute: #b3bfce;
+    --line: #73849a;
+    --hair: #34495E;
+    --blush-l: #3a2f3b;
+    --err: #ff8a7a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1b2530;
+  --card: #222f3c;
+  --ink: #f1f4f8;
+  --mute: #b3bfce;
+  --line: #73849a;
+  --hair: #34495E;
+  --blush-l: #3a2f3b;
+  --err: #ff8a7a;
+}
+
+.login-page {
+  font-family: "Instrument Sans", system-ui, sans-serif;
+  background: var(--deep);
+  color: var(--ink);
+  display: flex;
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  margin: 0;
+  width: 100%;
+}
+
+.login-page * {
+  box-sizing: border-box;
+}
+
+/* ===================== LEFT: STAGE ===================== */
+.stage {
+  position: relative;
+  flex: 1 1 58%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 40px 8vw 40px 56px;
+  color: #fff;
+  background: radial-gradient(ellipse 70% 55% at 55% 40%, rgba(230, 167, 184, .22), transparent 70%),
+              radial-gradient(rgba(230, 167, 184, .14) 1.2px, transparent 1.4px) 0 0/22px 22px,
+              linear-gradient(160deg, var(--steel), var(--deep) 75%);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.logo i {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .12);
+  display: grid;
+  place-items: center;
+}
+
+.scene {
+  position: relative;
+  flex: 1;
+  min-height: 320px;
+}
+
+#gl, .fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.fallback {
+  display: none;
+  place-items: center;
+}
+
+.nogl .fallback {
+  display: grid;
+}
+
+.ecg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12%;
+  opacity: .35;
+  pointer-events: none;
+}
+
+.nodes {
+  position: absolute;
+  right: 4%;
+  top: 4%;
+  opacity: .5;
+  pointer-events: none;
+}
+
+.copy {
+  position: relative;
+  z-index: 2;
+  max-width: 480px;
+}
+
+.copy h1 {
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1.15;
+  letter-spacing: -.02em;
+  font-weight: 600;
+  margin: 0 0 20px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .1);
+  border: 1px solid rgba(255, 255, 255, .18);
+  color: #FFF4F6;
+}
+
+.chips svg {
+  color: var(--blush);
+}
+
+/* ===================== RIGHT: PANEL ===================== */
+.panel {
+  position: relative;
+  z-index: 3;
+  flex: 0 0 min(46vw, 640px);
+  margin-left: -6vw;
+  background: var(--bg);
+  border-radius: 56px 0 0 56px;
+  padding: 40px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: -24px 0 60px rgba(35, 55, 71, .35);
+}
+
+.blob {
+  position: absolute;
+  right: -60px;
+  bottom: -60px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 167, 184, .28), transparent 70%);
+  pointer-events: none;
+}
+
+.inner {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin: auto 0;
+}
+
+.note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--blush-l);
+  color: var(--slate);
+  border: 1px solid #E6A7B8;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  margin-bottom: 20px;
+}
+
+/* ===================== QR ACCESS CARD ===================== */
+.card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--hair);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(35, 55, 71, .06), 0 24px 56px rgba(35, 55, 71, .18);
+}
+
+.ch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30px 28px 18px;
+  color: #fff;
+  background: radial-gradient(rgba(230, 167, 184, .2) 1.2px, transparent 1.4px) 0 0/16px 16px,
+              linear-gradient(135deg, var(--steel), var(--deep));
+  border-bottom: 2px dashed rgba(230, 167, 184, .55);
+}
+
+.slot {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 56px;
+  height: 8px;
+  margin-left: -28px;
+  border-radius: 99px;
+  background: var(--bg);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .4);
+}
+
+.cn {
+  font-weight: 600;
+  font-size: 19px;
+}
+
+.ct {
+  font-size: 13px;
+  color: #F4C8D4;
+  margin-top: 2px;
+}
+
+.qrs {
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .28);
+  flex: none;
+}
+
+.cb {
+  padding: 26px 32px 32px;
+}
+
+.cb h2 {
+  font-size: 28px;
+  letter-spacing: -.02em;
+  margin: 0 0 6px;
+}
+
+.sub {
+  margin: 0 0 22px;
+  color: var(--mute);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ===================== FORM CONTROLS ===================== */
+.f {
+  margin-bottom: 16px;
+}
+
+.f label {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.in {
+  position: relative;
+}
+
+.f input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.f input:hover {
+  border-color: var(--steel);
+}
+
+.f input:focus {
+  border-color: var(--steel);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--steel) 22%, transparent);
+  outline: none;
+}
+
+.f input[aria-invalid="true"] {
+  border-color: var(--err);
+}
+
+.eye {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  color: var(--mute);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.err {
+  font-size: 13px;
+  color: var(--err);
+  margin: 6px 0 0;
+}
+
+.go {
+  width: 100%;
+  height: 50px;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--steel);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(52, 73, 94, .3);
+  transition: transform .15s, background .15s, box-shadow .15s;
+}
+
+.go:hover {
+  background: var(--slate);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(52, 73, 94, .35);
+}
+
+.go:active {
+  transform: none;
+}
+
+.go:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.priv {
+  font-size: 13px;
+  color: var(--mute);
+  line-height: 1.5;
+  margin: 14px 0 0;
+}
+
+.alt {
+  text-align: center;
+  font-size: 14px;
+  color: var(--mute);
+  margin: 20px 0 0;
+}
+
+.alt a {
+  color: var(--steel);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.alt a:hover {
+  text-decoration: underline;
+}
+
+@media(prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .alt a {
+    color: var(--blush);
+  }
+}
+
+.status {
+  margin-top: 14px;
+  font-size: 13.5px;
+  color: var(--slate);
+  background: var(--blush-l);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 1100px) {
+  .panel { padding: 32px; }
+  .stage { padding: 32px 10vw 32px 32px; }
+  .chips li:nth-child(3) { display: none; }
+}
+
+@media (max-width: 860px) {
+  .login-page { flex-direction: column; }
+  .stage { flex: none; padding: 20px 20px 40px; }
+  .scene { min-height: 0; height: 200px; flex: none; }
+  .copy, .ecg, .nodes { display: none; }
+  .panel {
+    flex: none;
+    margin: -24px 0 0;
+    border-radius: 28px 28px 0 0;
+    padding: 24px 16px 40px;
+    box-shadow: 0 -12px 30px rgba(35, 55, 71, .25);
+  }
+  .cb { padding: 22px 20px 26px; }
+  .ch { padding: 28px 20px 16px; }
+  .card { border-radius: 18px; }
+  .blob { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
