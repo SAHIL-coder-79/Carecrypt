@@ -11,7 +11,7 @@ export function BeatingHeart({ className = "absolute inset-0 pointer-events-none
     
     // Camera
     const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
-    camera.position.z = 45;
+    camera.position.z = 60;
 
     // Renderer
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' });
@@ -30,7 +30,7 @@ export function BeatingHeart({ className = "absolute inset-0 pointer-events-none
     heartShape.bezierCurveTo( x + 16, y + 7, x + 16, y, x + 10, y );
     heartShape.bezierCurveTo( x + 7, y, x + 5, y + 5, x + 5, y + 5 );
 
-    const extrudeSettings = { depth: 2, bevelEnabled: true, bevelSegments: 3, steps: 2, bevelSize: 1.5, bevelThickness: 1.5 };
+    const extrudeSettings = { depth: 1, bevelEnabled: true, bevelSegments: 8, steps: 2, bevelSize: 2, bevelThickness: 2 };
     const geometry = new THREE.ExtrudeGeometry( heartShape, extrudeSettings );
     
     // Center the geometry
@@ -108,10 +108,8 @@ export function BeatingHeart({ className = "absolute inset-0 pointer-events-none
       req = requestAnimationFrame(animate);
       time += 0.05;
 
-      // Beating effect (simulating a heartbeat pulse)
-      // A typical heartbeat has a quick double pulse. 
-      // Math.pow(Math.sin(time), 4) creates sharp peaks.
-      const pulse = 1 + Math.pow(Math.sin(time * 1.5), 16) * 0.15;
+      // Beating effect
+      const pulse = 0.4 + Math.pow(Math.sin(time * 1.5), 16) * 0.08;
       group.scale.set(pulse, pulse, pulse);
 
       // Constant slow rotation
