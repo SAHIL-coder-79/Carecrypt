@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Scatter, Tooltip, XAxis, YAxis } from 'recharts'
+import { useAuth } from '../../auth/context.js'
 import { monthLabel } from '../../lib/analytics.js'
 import { Card, Spinner } from '../ui.jsx'
 
 export default function OutbreakDetection({ districts, categories, k }) {
+  const { request } = useAuth()
   const [district, setDistrict] = useState(districts[0] || 'Bengaluru Urban')
   const [category, setCategory] = useState(categories.find((c) => c === 'INFECTIOUS') || categories[0])
 
@@ -15,15 +17,7 @@ export default function OutbreakDetection({ districts, categories, k }) {
     if (!district || !category) return
     let mounted = true
     setLoading(true)
-    fetch(`/api/analytics/outbreak-detection?district=${encodeURIComponent(district)}&category=${encodeURIComponent(category)}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to fetch')
-        return res.json()
-      })
+    request(`/api/analytics/outbreak-detection?district=${encodeURIComponent(district)}&category=${encodeURIComponent(category)}`)
       .then((json) => {
         if (mounted) {
           setData(json)
