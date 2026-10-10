@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useOutletContext, useParams, useSearchParams } from 'react-router'
 import AddVisitDialog from '../../components/clinician/AddVisitDialog.jsx'
 import DiagnosisHistory from '../../components/clinician/DiagnosisHistory.jsx'
@@ -41,8 +41,22 @@ export default function PatientWorkspace() {
     location.state?.visitPrefill?.patientId === patientId ? location.state.visitPrefill : null,
   )
   const [justAdded, setJustAdded] = useState(null)
+  
+  const [decrypting, setDecrypting] = useState(true)
 
-  if (record.loading && !record.data) return <LoadingState label="Loading patient record…" />
+  useEffect(() => {
+    setDecrypting(true)
+  }, [patientId])
+
+  useEffect(() => {
+    if (record.data && decrypting) {
+      const timer = setTimeout(() => setDecrypting(false), 1200)
+      return () => clearTimeout(timer)
+    }
+  }, [record.data, decrypting])
+
+  if (record.loading && !record.data) return <DecryptingState />
+  if (record.data && decrypting) return <DecryptingState />
   if (record.error) {
     return (
       <div className="max-w-3xl space-y-4">
@@ -209,5 +223,34 @@ function PatientHeader({ patient, access, canAddVisit, onAddVisit, refreshing })
         ))}
       </div>
     </Card>
+  )
+}
+
+function DecryptingState() {
+  const [text, setText] = useState('')
+  
+  useEffect(() => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*'
+    const interval = setInterval(() => {
+      setText(Array(24).fill(0).map(() => chars[Math.floor(Math.random() * chars.length)]).join(''))
+    }, 50)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="flex flex-col items-center justify-center py-32">
+      <div className="relative">
+        <div className="absolute -inset-4 rounded-full bg-teal-500/20 blur-xl animate-pulse"></div>
+        <div className="relative h-16 w-16 rounded-full border-4 border-slate-200 border-t-teal-600 animate-spin"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <SparkIcon className="h-6 w-6 text-teal-700 animate-pulse" />
+        </div>
+      </div>
+      <h2 className="mt-8 text-lg font-semibold text-slate-800 animate-pulse tracking-wide">Decrypting secure health record</h2>
+      <div className="mt-3 bg-slate-900 rounded px-3 py-1.5 shadow-inner">
+        <p className="text-sm font-mono text-teal-400 w-56 text-center overflow-hidden tracking-[0.2em]">{text}</p>
+      </div>
+      <p className="mt-4 text-xs text-slate-500">Establishing zero-knowledge proof...</p>
+    </div>
   )
 }
