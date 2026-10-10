@@ -256,7 +256,7 @@ describe('CareCrypt end-to-end workflow', { skip, concurrency: false }, () => {
     assert.ok(ids.includes(state.inferenceEventId))
     assert.ok(ids.includes(state.accessEventId))
     const inference = events.body.events.find((e) => e.id === state.inferenceEventId)
-    assert.equal(inference.user.name, 'Priya Admin (Demo)')
+    assert.equal(inference.user.name, 'Priya Admin (Real)')
     assert.equal(inference.title, 'Repeated narrowing analytics queries')
 
     const audit = await get('/api/security/audit?limit=200', tok.security)

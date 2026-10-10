@@ -5,6 +5,8 @@ import { query } from '../db/pool.js'
 import { HttpError } from '../lib/httpError.js'
 import { authenticateToken } from '../middleware/authenticate.js'
 import { requireRole } from '../middleware/requireRole.js'
+import * as requests from '../consent/requestRepository.js'
+import * as consents from '../consent/repository.js'
 
 const router = Router()
 
@@ -141,6 +143,87 @@ router.get('/me/visits', authenticateToken(), requireRole('CLINICIAN', { resourc
       }
     }),
   })
+})
+
+// POST /api/clinicians/consent-requests
+// A clinician requests access to a patient record by providing the patient's MRN.
+router.post('/consent-requests', authenticateToken(), requireRole('CLINICIAN', { resource: 'CONSENT' }), async (req, res) => {
+  const { mrn, scope, reason, durationDays } = req.body ?? {}
+
+  if (typeof mrn !== 'string' || mrn.trim().length === 0) {
+    throw new HttpError(400, 'BAD_REQUEST', 'Patient MRN is required.')
+  }
+  if (!['FULL_RECORD', 'VISIT_HISTORY', 'SUMMARY_ONLY'].includes(scope)) {
+    throw new HttpError(400, 'BAD_REQUEST', 'Invalid scope.')
+  }
+  const cleanReason = typeof reason === 'string' ? reason.trim() : ''
+  if (cleanReason.length < 3 || cleanReason.length > 200) {
+    throw new HttpError(400, 'BAD_REQUEST', 'Reason must be 3 to 200 characters.')
+  }
+  
+  const clinicianId = await consents.findOwnClinicianId(req.user.id)
+  if (!clinicianId) throw new HttpError(403, 'FORBIDDEN', 'No active clinician profile.')
+
+  // Look up the patient by MRN
+  const { rows } = await query('SELECT id FROM clinical.patients WHERE UPPER(mrn) = UPPER($1) AND is_active', [mrn.trim()])
+  if (rows.length === 0) {
+    // Audit log for failure to find patient
+    await recordAuditEvent({
+      req, user: req.user, action: 'CONSENT_REQUEST', resourceType: 'consent_request',
+      outcome: 'FAILURE', reason: 'PATIENT_NOT_FOUND', metadata: { mrn }
+    })
+    // For privacy, we just say request sent or invalid MRN without revealing if it exists
+    throw new HttpError(404, 'NOT_FOUND', 'Patient MRN not found.')
+  }
+  
+  const patientId = rows[0].id
+
+  // Check if there is already an active consent
+  const { rows: consentRows } = await query(
+    `SELECT 1 FROM clinical.consent_records 
+      WHERE patient_id = $1 AND clinician_id = $2 
+        AND granted_at <= now() 
+        AND (expires_at IS NULL OR expires_at > now()) 
+        AND (revoked_at IS NULL OR revoked_at > now())`,
+    [patientId, clinicianId]
+  )
+  if (consentRows.length > 0) {
+    throw new HttpError(409, 'CONFLICT', 'You already have active consent for this patient.')
+  }
+
+  // Check for an existing pending request
+  const { rows: pendingRows } = await query(
+    `SELECT 1 FROM clinical.consent_requests WHERE patient_id = $1 AND clinician_id = $2 AND status = 'PENDING'`,
+    [patientId, clinicianId]
+  )
+  if (pendingRows.length > 0) {
+    throw new HttpError(409, 'CONFLICT', 'You already have a pending request for this patient.')
+  }
+
+  const requestId = await requests.createRequest({
+    patientId,
+    clinicianId,
+    scope,
+    reason: cleanReason,
+    durationDays: typeof durationDays === 'number' ? durationDays : null
+  })
+
+  await recordAuditEvent({
+    req, user: req.user, action: 'CONSENT_REQUEST', resourceType: 'consent_request', resourceId: requestId,
+    patientId, outcome: 'SUCCESS', reason: cleanReason, metadata: { scope, durationDays }
+  })
+
+  res.status(201).json({ id: requestId, message: 'Request sent successfully.' })
+})
+
+// GET /api/clinicians/consent-requests
+// A clinician views the consent requests they have sent.
+router.get('/consent-requests', authenticateToken(), requireRole('CLINICIAN', { resource: 'CONSENT' }), async (req, res) => {
+  const clinicianId = await consents.findOwnClinicianId(req.user.id)
+  if (!clinicianId) throw new HttpError(403, 'FORBIDDEN', 'No active clinician profile.')
+
+  const rows = await requests.findByClinicianId(clinicianId)
+  res.json({ requests: rows.map(requests.toRequest) })
 })
 
 export default router

@@ -45,9 +45,6 @@
     }, [active])
 
     async function issue() {
-      if (active && !window.confirm('Issuing a new card will stop your old one from working. Are you sure you want to replace it?')) {
-        return
-      }
       setIssued({ status: 'busy' })
       try {
         const body = await request('/api/qr/my-card', { method: 'POST', body: {} })

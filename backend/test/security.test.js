@@ -77,7 +77,7 @@ describe('security console', { skip }, () => {
 
     const list = await call('GET', '/api/security/events', tokens.SECURITY_ADMIN)
     const e = list.body.events.find((x) => x.id === rows[0].id)
-    assert.equal(e.user.name, 'Priya Admin (Demo)')
+    assert.equal(e.user.name, 'Priya Admin (Real)')
     assert.equal(e.status, 'OPEN')
   })
 

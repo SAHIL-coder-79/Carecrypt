@@ -5,6 +5,7 @@ import { HttpError } from '../lib/httpError.js'
 import { isUuid, parseUuid } from '../lib/validate.js'
 import { authenticateToken } from '../middleware/authenticate.js'
 import { requireRole } from '../middleware/requireRole.js'
+import * as requests from '../consent/requestRepository.js'
 import { validationError } from '../patients/visitInput.js'
 
 // Patient consent: which clinician may see the patient's record, for what
@@ -178,6 +179,69 @@ router.delete('/:consentId', authenticateToken(), requireRole('PATIENT', 'CLINIC
   })
 
   res.json({ consent })
+})
+
+// GET /api/consent/:patientId/requests
+router.get('/:patientId/requests', authenticateToken(), requireRole('PATIENT', { resource: 'CONSENT', patientParam: 'patientId' }), noStore, async (req, res) => {
+  const patientId = parseUuid(req.params.patientId, 'patientId')
+  if ((await consents.findOwnPatientId(req.user.id)) !== patientId) {
+    throw refuse(req, 'NOT_OWN_RECORD')
+  }
+
+  const rows = await requests.findByPatientId(patientId)
+  res.json({ patientId, requests: rows.map(requests.toRequest) })
+})
+
+// POST /api/consent/requests/:id/resolve
+router.post('/requests/:id/resolve', authenticateToken(), requireRole('PATIENT', { resource: 'CONSENT' }), noStore, async (req, res) => {
+  const requestId = parseUuid(req.params.id, 'id')
+  const reqRow = await requests.getById(requestId)
+  if (!reqRow) throw new HttpError(404, 'NOT_FOUND', 'Request not found.')
+  
+  const patientId = await consents.findOwnPatientId(req.user.id)
+  if (!patientId || reqRow.patient_id !== patientId) {
+    throw refuse(req, 'NOT_OWN_RECORD')
+  }
+  
+  if (reqRow.status !== 'PENDING') {
+    throw new HttpError(409, 'CONFLICT', 'This request is no longer pending.')
+  }
+
+  const { status, durationDays } = req.body ?? {}
+  if (!['APPROVED', 'DENIED'].includes(status)) {
+    throw new HttpError(400, 'BAD_REQUEST', 'Status must be APPROVED or DENIED.')
+  }
+
+  let consentRecordId = null
+  if (status === 'APPROVED') {
+    const dur = durationDays ?? reqRow.requestedDurationDays ?? null
+    const { id } = await consents.grant({
+      patientId,
+      clinicianId: reqRow.clinician_id,
+      clinicianRole: null,
+      scope: reqRow.scope,
+      purpose: reqRow.reason,
+      durationDays: dur,
+      recordedBy: req.user.id,
+    })
+    consentRecordId = id
+  }
+
+  await requests.resolveRequest(requestId, status, req.user.id, consentRecordId)
+
+  await recordAuditEvent({
+    req,
+    user: req.user,
+    action: status === 'APPROVED' ? 'CONSENT_GRANT' : 'CONSENT_DENY',
+    resourceType: 'consent_request',
+    resourceId: requestId,
+    patientId,
+    outcome: 'SUCCESS',
+    reason: `Patient ${status.toLowerCase()} request`,
+    metadata: { scope: reqRow.scope, status }
+  })
+
+  res.json({ success: true, status, consentRecordId })
 })
 
 export default router

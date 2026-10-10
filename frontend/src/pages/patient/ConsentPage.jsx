@@ -4,6 +4,7 @@ import ServerRefusal from '../../components/ServerRefusal.jsx'
 import { Alert, Badge, StatusBadge, ButtonLink, Card, EmptyState, LoadingState, PageHeader } from '../../components/ui.jsx'
 import { formatDate } from '../../lib/format.js'
 import { useApiData } from '../../lib/useApiData.js'
+import { PatientConsentRequests } from './PatientConsentRequests.jsx'
 
 const SCOPES = [
   { id: 'FULL_RECORD', label: 'Full record', detail: 'Everything, including your contact details and address.' },
@@ -61,6 +62,8 @@ export default function ConsentPage() {
       />
 
       {notice && <Alert tone="success">{notice}</Alert>}
+
+      <PatientConsentRequests patientId={user.patientId} onResolved={refresh} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="order-2 space-y-6 lg:order-1">

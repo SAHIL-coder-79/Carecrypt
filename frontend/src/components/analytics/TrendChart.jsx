@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { CartesianGrid, ComposedChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { categoryColor, categoryLabel, formatCount, hiddenText, monthLabel, TOTAL_COLOR } from '../../lib/analytics.js'
 import { HiddenNote, Segmented, TooltipBox } from './common.jsx'
 
@@ -64,8 +64,8 @@ export default function TrendChart({ data, k, rankedCategories }) {
 
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={rows} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
-            <CartesianGrid stroke="#e2e8f0" vertical={false} />
+          <ComposedChart data={rows} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
+            <CartesianGrid stroke="#e2e8f0" vertical={false} strokeDasharray="3 3" />
             <XAxis dataKey="month" tickFormatter={(m) => monthLabel(m)} tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={{ stroke: '#cbd5e1' }} />
             <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} />
             <Tooltip
@@ -90,20 +90,22 @@ export default function TrendChart({ data, k, rankedCategories }) {
               }}
             />
             {series.map((s) => (
-              <Line
+              <Area
                 key={s.key}
                 type="monotone"
                 dataKey={s.key}
                 name={s.label}
                 stroke={s.color}
+                fill={s.color}
+                fillOpacity={0.15}
                 strokeWidth={2}
-                dot={{ r: 2.5 }}
-                activeDot={{ r: 4 }}
+                dot={{ r: 2.5, fill: s.color, strokeWidth: 2, stroke: '#ffffff' }}
+                activeDot={{ r: 5, fill: s.color, strokeWidth: 2, stroke: '#ffffff' }}
                 connectNulls={false}
                 isAnimationActive={false}
               />
             ))}
-          </LineChart>
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
       <HiddenNote k={k} count={hiddenCount}>

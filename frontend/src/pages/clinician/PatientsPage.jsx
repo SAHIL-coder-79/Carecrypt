@@ -6,6 +6,7 @@ import { Badge, Button, Card, DataTable, EmptyState, LoadingState, PageHeader } 
 import { formatDate, SCOPE, titleCase } from '../../lib/format.js'
 import { inputClass } from '../../lib/styles.js'
 import { useApiData } from '../../lib/useApiData.js'
+import { ClinicianConsentRequests } from './ClinicianConsentRequests.jsx'
 
 const SCOPE_TONE = { FULL_RECORD: 'teal', VISIT_HISTORY: 'blue', SUMMARY_ONLY: 'violet' }
 
@@ -48,6 +49,8 @@ export default function PatientsPage() {
           )
         }
       />
+
+      <ClinicianConsentRequests />
 
       {list.error ? (
         <ServerRefusal error={list.error} />

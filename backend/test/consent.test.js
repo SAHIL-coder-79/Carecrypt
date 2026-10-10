@@ -34,6 +34,7 @@ describe('consent', { skip }, () => {
     const c = await query('SELECT registration_number, id FROM clinical.clinicians')
     for (const r of c.rows) clinicians[r.registration_number] = r.id
     // Start from a clean slate for Dr. Iyer on this patient.
+    await query(`UPDATE clinical.emergency_access_records SET expires_at = now() WHERE patient_id = $1 AND clinician_id = $2 AND expires_at > now()`, [ids['CC-000020'], clinicians['DEMO-KMC-20001']])
     await query(
       `UPDATE clinical.consent_records SET revoked_at = now(), revoked_reason = 'Test reset'
         WHERE patient_id = $1 AND clinician_id = $2 AND revoked_at IS NULL`,

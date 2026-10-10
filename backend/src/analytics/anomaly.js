@@ -123,7 +123,8 @@ export async function getOutbreakDetection(state, district, category, isDemo = f
       anomalyScore: Number(anomalyScore.toFixed(2)),
       isAlert,
       explanation,
-      isSyntheticOutbreak: pt.isSyntheticOutbreak
+      isSyntheticOutbreak: pt.isSyntheticOutbreak,
+      synthetic: pt.synthetic
     })
   }
 
@@ -133,6 +134,7 @@ export async function getOutbreakDetection(state, district, category, isDemo = f
     model: 'Simple Moving Average Baseline v1.0',
     threshold: '1.5x expected baseline',
     timestamp: new Date().toISOString(),
+    isSynthetic: dataPoints.some(p => p.synthetic),
     results
   }
 }

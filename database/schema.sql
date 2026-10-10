@@ -422,7 +422,7 @@ CREATE INDEX visit_medications_medication_idx ON clinical.visit_medications (med
 -- an optional expiry. A consent is in force when it is not revoked and not expired.
 -- -----------------------------------------------------------------------------
 
-CREATE TYPE clinical.consent_channel AS ENUM ('IN_PERSON', 'PATIENT_PORTAL');
+CREATE TYPE clinical.consent_channel AS ENUM ('IN_PERSON', 'PATIENT_PORTAL', 'REMOTE_REQUEST');
 
 CREATE TABLE clinical.consent_records (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -448,6 +448,31 @@ CREATE TABLE clinical.consent_records (
 CREATE INDEX consent_lookup_idx
   ON clinical.consent_records (patient_id, clinician_id) WHERE revoked_at IS NULL;
 CREATE INDEX consent_clinician_idx ON clinical.consent_records (clinician_id);
+
+CREATE TYPE clinical.consent_request_status AS ENUM ('PENDING', 'APPROVED', 'DENIED', 'EXPIRED');
+
+CREATE TABLE clinical.consent_requests (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id          uuid NOT NULL REFERENCES clinical.patients (id) ON DELETE CASCADE,
+  clinician_id        uuid NOT NULL REFERENCES clinical.clinicians (id) ON DELETE CASCADE,
+  scope               clinical.consent_scope NOT NULL,
+  reason              text NOT NULL,
+  requested_duration  interval,
+  status              clinical.consent_request_status NOT NULL DEFAULT 'PENDING',
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  expires_at          timestamptz NOT NULL,
+  resolved_at         timestamptz,
+  resolved_by         uuid REFERENCES identity.users (id),
+  consent_record_id   uuid REFERENCES clinical.consent_records (id),
+  CONSTRAINT consent_requests_expiry_check CHECK (expires_at > created_at),
+  CONSTRAINT consent_requests_resolved_check CHECK (
+    (status = 'PENDING' AND resolved_at IS NULL AND consent_record_id IS NULL AND resolved_by IS NULL) OR
+    (status <> 'PENDING' AND resolved_at IS NOT NULL)
+  )
+);
+CREATE UNIQUE INDEX consent_requests_one_pending
+  ON clinical.consent_requests (patient_id, clinician_id) WHERE status = 'PENDING';
+CREATE INDEX consent_requests_patient_idx ON clinical.consent_requests (patient_id, created_at DESC);
 
 CREATE FUNCTION clinical.has_active_consent(
   p_patient_id uuid,
