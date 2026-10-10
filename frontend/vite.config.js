@@ -8,6 +8,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    build: {
+      outDir: 'build',
+    },
     server: {
       port: Number(env.VITE_DEV_PORT) || 5173,
       // Forward /api calls to the Express backend during development,
