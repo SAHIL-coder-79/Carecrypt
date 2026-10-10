@@ -107,7 +107,7 @@ function ThreeScene() {
     const card = new THREE.Group()
     card.add(new THREE.Mesh(keep(new THREE.ExtrudeGeometry(roundRect(1.7, 1.15, 0.12), bevel)), keep(new THREE.MeshStandardMaterial({ color: SOFT, roughness: 0.45 }))))
     const barMat = keep(new THREE.MeshStandardMaterial({ color: 0xcdd5df, roughness: 0.6 }))
-    const steelMat = keep(new THREE.MeshStandardMaterial({ color: STEEL, roughness: 0.5 }))
+    const steelMat = keep(new THREE.MeshStandardMaterial({ color: STEEL, roughness: 0.5 }));
     
     [[1.0, 0.2], [0.8, 0], [0.9, -0.2]].forEach(b => {
       const bar = new THREE.Mesh(keep(new THREE.BoxGeometry(b[0], 0.07, 0.02)), barMat)
