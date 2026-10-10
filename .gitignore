@@ -30,3 +30,5 @@ Thumbs.db
 
 # Generated demo QR cards (contain raw card tokens)
 backend/demo-qr-cards/
+
+.vercel

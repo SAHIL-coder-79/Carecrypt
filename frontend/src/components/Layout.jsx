@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../auth/context.js'
 import { ROLE_LABEL } from '../lib/format.js'
-import { navigationFor, OTHER_ROLE_PAGES } from '../lib/navigation.js'
-import { CloseIcon, HeartPulseIcon, LockIcon, LogOutIcon, MenuIcon } from './icons.jsx'
+import { navigationFor } from '../lib/navigation.js'
+import { CloseIcon, HeartPulseIcon, LogOutIcon, MenuIcon } from './icons.jsx'
 
 const ROLE_TONE = {
   CLINICIAN: 'bg-teal-50 text-teal-800 ring-teal-200',
@@ -106,7 +106,6 @@ function Sidebar({ onClose }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const items = navigationFor(user)
-  const others = OTHER_ROLE_PAGES.filter((p) => p.role !== user?.role)
 
   function signOut() {
     logout()
@@ -155,25 +154,7 @@ function Sidebar({ onClose }) {
           ))}
         </ul>
 
-        <details className="mt-6 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2 text-xs text-slate-600">
-          <summary className="flex cursor-pointer list-none items-center gap-2 font-medium text-slate-700">
-            <LockIcon className="h-4 w-4 text-slate-500" />
-            Access is enforced by the server
-          </summary>
-          <p className="mt-2">
-            This menu shows your role&apos;s sections. Nothing is protected by hiding it: open another role&apos;s page
-            and the server refuses.
-          </p>
-          <ul className="mt-2 space-y-1">
-            {others.map((p) => (
-              <li key={p.to}>
-                <Link to={p.to} className="text-teal-800 underline-offset-2 hover:underline">
-                  {p.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </details>
+
       </nav>
 
       <div className="border-t border-slate-200 px-4 py-4">
