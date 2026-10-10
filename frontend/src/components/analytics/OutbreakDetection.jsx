@@ -179,7 +179,7 @@ function HolographicMap({ hasAlerts }) {
     const positions = new Float32Array(count * 3)
     const colors = new Float32Array(count * 3)
     
-    const baseColor = new THREE.Color('#38bdf8') 
+    const baseColor = new THREE.Color('#facc15') 
     const alertColor = new THREE.Color('#ef4444') 
 
     for(let i=0; i<count*3; i+=3) {
@@ -209,7 +209,7 @@ function HolographicMap({ hasAlerts }) {
     scene.add(particles)
 
     const lineMat = new THREE.LineBasicMaterial({ 
-      color: hasAlerts ? '#ef4444' : '#38bdf8', 
+      color: hasAlerts ? '#ef4444' : '#facc15', 
       transparent: true, 
       opacity: hasAlerts ? 0.2 : 0.05 
     })
