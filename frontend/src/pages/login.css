@@ -63,10 +63,10 @@
   display: flex;
   flex-direction: column;
   padding: 40px 8vw 40px 56px;
-  color: #fff;
-  background: radial-gradient(ellipse 70% 55% at 55% 40%, rgba(230, 167, 184, .22), transparent 70%),
-              radial-gradient(rgba(230, 167, 184, .14) 1.2px, transparent 1.4px) 0 0/22px 22px,
-              linear-gradient(160deg, var(--steel), var(--deep) 75%);
+  color: var(--slate);
+  background: radial-gradient(ellipse 70% 55% at 55% 40%, rgba(230, 167, 184, .32), transparent 70%),
+              radial-gradient(rgba(230, 167, 184, .24) 1.2px, transparent 1.4px) 0 0/22px 22px,
+              linear-gradient(160deg, #ffffff, var(--bg) 75%);
 }
 
 .logo {
@@ -83,7 +83,7 @@
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, .12);
+  background: rgba(38, 52, 66, .08);
   display: grid;
   place-items: center;
 }
@@ -158,9 +158,9 @@
   font-size: 14px;
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, .1);
-  border: 1px solid rgba(255, 255, 255, .18);
-  color: #FFF4F6;
+  background: rgba(38, 52, 66, .04);
+  border: 1px solid rgba(38, 52, 66, .12);
+  color: var(--slate);
 }
 
 .chips svg {
