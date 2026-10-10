@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ConditionBars } from '../../components/analytics/BarCharts.jsx'
 import { CategorySelect } from '../../components/analytics/common.jsx'
 import CustomQuery from '../../components/analytics/CustomQuery.jsx'
+import OutbreakDetection from '../../components/analytics/OutbreakDetection.jsx'
 import { Panel } from '../../components/analytics/Panels.jsx'
 import TrendChart from '../../components/analytics/TrendChart.jsx'
 import ServerRefusal from '../../components/ServerRefusal.jsx'
@@ -75,6 +76,14 @@ export default function DiseaseTrendsPage() {
           <Spinner />
         )}
       </Card>
+
+      {locations.data && conditions.data && (
+        <OutbreakDetection 
+          districts={locations.data.locations} 
+          categories={locations.data.categories} 
+          k={k} 
+        />
+      )}
     </div>
   )
 }

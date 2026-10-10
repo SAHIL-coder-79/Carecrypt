@@ -9,15 +9,15 @@ const STATUS = `CASE
   END`
 
 const SELECT = `
-  SELECT cr.id, cr.patient_id, cr.clinician_id, cr.scope, cr.purpose, cr.channel,
+  SELECT cr.id, cr.patient_id, cr.clinician_id, cr.clinician_role, cr.scope, cr.purpose, cr.channel,
          cr.granted_at, cr.expires_at, cr.revoked_at, cr.revoked_reason,
          ${STATUS} AS status,
          c.first_name, c.last_name, c.specialty, c.user_id AS clinician_user_id,
          f.name AS facility_name, f.district AS facility_district,
          p.user_id AS patient_user_id
     FROM clinical.consent_records cr
-    JOIN clinical.clinicians c ON c.id = cr.clinician_id
-    JOIN clinical.facilities f ON f.id = c.facility_id
+    LEFT JOIN clinical.clinicians c ON c.id = cr.clinician_id
+    LEFT JOIN clinical.facilities f ON f.id = c.facility_id
     JOIN clinical.patients p ON p.id = cr.patient_id`
 
 const ORDER = `ORDER BY (${STATUS} = 'ACTIVE') DESC, cr.granted_at DESC`
@@ -50,25 +50,28 @@ export async function clinicianIsActive(clinicianId) {
   return rows.length > 0
 }
 
-// Grants a new consent. Any consent still active for the same clinician is
+// Grants a new consent. Any consent still active for the same clinician (or role) is
 // revoked first, so a patient's latest decision is the one in force.
-export function grant({ patientId, clinicianId, scope, purpose, durationDays, recordedBy }) {
+export function grant({ patientId, clinicianId, clinicianRole, scope, purpose, durationDays, recordedBy }) {
   return withTransaction(async (client) => {
     const replaced = await client.query(
       `UPDATE clinical.consent_records
           SET revoked_at = now(), revoked_reason = 'Replaced by a new consent'
-        WHERE patient_id = $1 AND clinician_id = $2
+        WHERE patient_id = $1 AND (
+          (clinician_id IS NOT NULL AND clinician_id = $2) OR
+          (clinician_role IS NOT NULL AND clinician_role = $3)
+        )
           AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > now())
         RETURNING id`,
-      [patientId, clinicianId],
+      [patientId, clinicianId, clinicianRole],
     )
     const { rows } = await client.query(
       `INSERT INTO clinical.consent_records
-         (patient_id, clinician_id, scope, purpose, channel, granted_at, expires_at, recorded_by)
-       VALUES ($1, $2, $3, $4, 'PATIENT_PORTAL', now(),
-               CASE WHEN $5::int IS NULL THEN NULL ELSE now() + make_interval(days => $5::int) END, $6)
+         (patient_id, clinician_id, clinician_role, scope, purpose, channel, granted_at, expires_at, recorded_by)
+       VALUES ($1, $2, $3, $4, $5, 'PATIENT_PORTAL', now(),
+               CASE WHEN $6::int IS NULL THEN NULL ELSE now() + make_interval(days => $6::int) END, $7)
        RETURNING id`,
-      [patientId, clinicianId, scope, purpose, durationDays, recordedBy],
+      [patientId, clinicianId, clinicianRole, scope, purpose, durationDays, recordedBy],
     )
     return { id: rows[0].id, replaced: replaced.rowCount }
   })
@@ -91,13 +94,14 @@ export function toConsent(r) {
   return {
     id: r.id,
     patientId: r.patient_id,
-    clinician: {
+    clinician: r.clinician_id ? {
       id: r.clinician_id,
       name: `Dr. ${r.first_name} ${r.last_name}`,
       specialty: r.specialty,
       facility: r.facility_name,
       district: r.facility_district,
-    },
+    } : null,
+    clinicianRole: r.clinician_role,
     scope: r.scope,
     purpose: r.purpose,
     channel: r.channel,

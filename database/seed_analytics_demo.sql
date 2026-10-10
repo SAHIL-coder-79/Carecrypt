@@ -54,7 +54,7 @@ FROM clinical.facilities f
 JOIN identity.users u ON u.email = 'synthetic.source.' || lower(f.code) || '@carecrypt.example';
 
 -- Patients: district shares Pune 35%, Bengaluru Urban 25%, Nashik 20%, Ahmedabad 20%.
-CREATE TEMP TABLE syn_patients ON COMMIT DROP AS
+CREATE TEMP TABLE syn_patients AS
 SELECT n,
        CASE WHEN r < 0.35 THEN 'Pune' WHEN r < 0.60 THEN 'Bengaluru Urban' WHEN r < 0.80 THEN 'Nashik' ELSE 'Ahmedabad' END AS district,
        -- Age on 2026-09-01: a young-skewed population, 0 to 89.
@@ -72,7 +72,7 @@ FROM syn_patients p
 JOIN LATERAL (SELECT * FROM clinical.facilities WHERE district = p.district ORDER BY code LIMIT 1) f ON true;
 
 -- Visits: 1 to 4 per patient, spread over Oct 2025 to Sep 2026, office hours IST.
-CREATE TEMP TABLE syn_visits ON COMMIT DROP AS
+CREATE TEMP TABLE syn_visits AS
 SELECT gen_random_uuid() AS visit_id, p.id AS patient_id, p.district, p.gender,
        extract(year FROM age(v.visit_at::date, p.date_of_birth))::int AS age,
        v.visit_at, v.kind
@@ -102,7 +102,7 @@ JOIN LATERAL (
 JOIN clinical.clinicians c ON c.registration_number = 'SYN-' || f.code;
 
 -- Relative weight of each condition for a visit, by month, district, age and gender.
-CREATE TEMP TABLE syn_weights ON COMMIT DROP AS
+CREATE TEMP TABLE syn_weights AS
 SELECT v.visit_id, c.code,
        CASE c.code
          WHEN 'A90'   THEN CASE WHEN m IN (8, 9, 10) THEN 5 WHEN m = 7 THEN 2 ELSE 0.15 END

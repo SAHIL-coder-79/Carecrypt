@@ -214,7 +214,8 @@ describe('CareCrypt end-to-end workflow', { skip, concurrency: false }, () => {
   })
 
   test('13. ADMIN highly specific aggregate query: minimum-group check → SUPPRESSED', async () => {
-    const r = await get('/api/analytics/query?district=Bengaluru%20Urban&condition=J06.9&month=2026-09&gender=FEMALE', tok.admin)
+    const month = new Date().toISOString().slice(0, 7)
+    const r = await get(`/api/analytics/query?district=Bengaluru%20Urban&condition=J06.9&month=${month}&gender=FEMALE`, tok.admin)
     assert.equal(r.status, 200)
     assert.deepEqual(r.body.result, { patientCount: null, caseCount: null, suppressed: true, suppression: 'SMALL_GROUP' })
     assert.equal(r.body.inferenceControl.flagged, false)
@@ -226,7 +227,7 @@ describe('CareCrypt end-to-end workflow', { skip, concurrency: false }, () => {
       '?state=Karnataka',
       '?state=Karnataka&district=Bengaluru%20Urban',
       '?state=Karnataka&district=Bengaluru%20Urban&category=RESPIRATORY',
-      '?state=Karnataka&district=Bengaluru%20Urban&category=RESPIRATORY&month=2026-09',
+      `?state=Karnataka&district=Bengaluru%20Urban&category=RESPIRATORY&month=${new Date().toISOString().slice(0, 7)}`,
     ]
     let last
     for (const qs of steps) {

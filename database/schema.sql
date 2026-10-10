@@ -17,7 +17,6 @@
 --   analytics  de-identified, minimum-group-size-suppressed aggregate views
 -- =============================================================================
 
-\set ON_ERROR_STOP on
 
 BEGIN;
 
@@ -299,6 +298,23 @@ CREATE TRIGGER patient_allergies_set_updated_at BEFORE UPDATE ON clinical.patien
 CREATE TYPE clinical.visit_type AS ENUM ('OPD', 'FOLLOW_UP', 'EMERGENCY', 'TELECONSULT');
 CREATE TYPE clinical.visit_status AS ENUM ('OPEN', 'COMPLETED', 'CANCELLED');
 
+CREATE TABLE clinical.emergency_access_records (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id      uuid NOT NULL REFERENCES clinical.patients (id) ON DELETE CASCADE,
+  clinician_id    uuid NOT NULL REFERENCES clinical.clinicians (id),
+  scope           clinical.consent_scope NOT NULL,
+  reason          text NOT NULL,
+  granted_at      timestamptz NOT NULL DEFAULT now(),
+  expires_at      timestamptz NOT NULL,
+  revoked_at      timestamptz,
+  revoked_reason  text,
+  recorded_by     uuid NOT NULL REFERENCES identity.users (id),
+  CONSTRAINT emergency_expiry_after_grant CHECK (expires_at > granted_at),
+  CONSTRAINT emergency_revoked_after_grant CHECK (revoked_at IS NULL OR revoked_at >= granted_at)
+);
+
+CREATE INDEX idx_emergency_access_patient ON clinical.emergency_access_records (patient_id, clinician_id, expires_at DESC);
+
 CREATE TABLE clinical.visits (
   id                   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   patient_id           uuid NOT NULL REFERENCES clinical.patients (id),
@@ -411,7 +427,8 @@ CREATE TYPE clinical.consent_channel AS ENUM ('IN_PERSON', 'PATIENT_PORTAL');
 CREATE TABLE clinical.consent_records (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   patient_id      uuid NOT NULL REFERENCES clinical.patients (id) ON DELETE CASCADE,
-  clinician_id    uuid NOT NULL REFERENCES clinical.clinicians (id),
+  clinician_id    uuid REFERENCES clinical.clinicians (id),
+  clinician_role  text,
   scope           clinical.consent_scope NOT NULL,
   purpose         text NOT NULL,
   channel         clinical.consent_channel NOT NULL,
@@ -420,6 +437,10 @@ CREATE TABLE clinical.consent_records (
   revoked_at      timestamptz,
   revoked_reason  text,
   recorded_by     uuid REFERENCES identity.users (id),
+  CONSTRAINT consent_target_check CHECK (
+    (clinician_id IS NOT NULL AND clinician_role IS NULL) OR
+    (clinician_id IS NULL AND clinician_role IS NOT NULL)
+  ),
   CONSTRAINT consent_expiry_after_grant CHECK (expires_at IS NULL OR expires_at > granted_at),
   CONSTRAINT consent_revoked_after_grant CHECK (revoked_at IS NULL OR revoked_at >= granted_at),
   CONSTRAINT consent_revoked_reason CHECK (revoked_at IS NOT NULL OR revoked_reason IS NULL)
@@ -922,7 +943,7 @@ BEGIN
       END IF;
     END LOOP;
     SELECT count(DISTINCT e.patient_id) INTO n_coarser FROM analytics.filtered_events(coarser) e;
-    IF n_coarser - n_patients BETWEEN 1 AND k - 1 THEN
+    IF n_coarser >= k AND n_coarser - n_patients BETWEEN 1 AND k - 1 THEN
       RETURN QUERY SELECT NULL::bigint, NULL::bigint, true, 'DIFFERENCE'::text, coarser, k;
       RETURN;
     END IF;

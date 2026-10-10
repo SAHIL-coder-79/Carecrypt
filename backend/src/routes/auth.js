@@ -25,6 +25,13 @@ router.post('/login', loginLimiter, async (req, res) => {
   res.json(result)
 })
 
+router.post('/register', loginLimiter, async (req, res) => {
+  const { register } = await import('../services/authService.js')
+  const result = await register(req.body, req)
+  res.set('Cache-Control', 'no-store')
+  res.json(result)
+})
+
 // Returns the account behind the presented token.
 router.get('/me', authenticateToken(), (req, res) => {
   res.set('Cache-Control', 'no-store')

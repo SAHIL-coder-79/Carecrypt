@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../../auth/context.js'
 import ServerRefusal from '../../components/ServerRefusal.jsx'
-import { Alert, Badge, ButtonLink, Card, LoadingState, PageHeader } from '../../components/ui.jsx'
+import { Alert, Badge, StatusBadge, ButtonLink, Card, EmptyState, LoadingState, PageHeader } from '../../components/ui.jsx'
 import { formatDate } from '../../lib/format.js'
 import { useApiData } from '../../lib/useApiData.js'
 
@@ -69,7 +69,7 @@ export default function ConsentPage() {
               Active access <span className="font-normal text-slate-500">({active.length})</span>
             </h2>
             {active.length === 0 ? (
-              <p className="text-sm text-slate-500">No clinician can currently open your record.</p>
+              <EmptyState title="No active access">No clinician can currently open your record.</EmptyState>
             ) : (
               active.map((c) => <AccessCard key={c.id} consent={c} onRevoked={refresh} />)
             )}
@@ -124,7 +124,8 @@ function AccessCard({ consent: c, onRevoked }) {
     setError(null)
     try {
       await request(`/api/consent/${c.id}`, { method: 'DELETE', body: { reason: 'Revoked by patient' } })
-      onRevoked(`${c.clinician.name} can no longer open your record.`)
+      const targetName = c.clinicianRole ? `Any ${c.clinicianRole}` : c.clinician?.name
+      onRevoked(`${targetName} can no longer open your record.`)
     } catch (err) {
       setError(err)
       setBusy(false)
@@ -137,15 +138,21 @@ function AccessCard({ consent: c, onRevoked }) {
     >
       <header className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-2.5">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Access request</h3>
-        <Badge tone={STATUS_TONE[c.status]}>{c.status}</Badge>
+        <StatusBadge status={c.status} />
       </header>
       <dl className="space-y-1.5 px-4 py-3">
-        <Field label="Clinician">
-          <span className="font-medium">{c.clinician.name}</span>
-          <span className="text-slate-600">
-            {' '}
-            · {c.clinician.specialty}, {c.clinician.facility}, {c.clinician.district}
-          </span>
+        <Field label={c.clinicianRole ? 'Role' : 'Clinician'}>
+          {c.clinicianRole ? (
+            <span className="font-medium">Any {c.clinicianRole}</span>
+          ) : (
+            <>
+              <span className="font-medium">{c.clinician?.name}</span>
+              <span className="text-slate-600">
+                {' '}
+                · {c.clinician?.specialty}, {c.clinician?.facility}, {c.clinician?.district}
+              </span>
+            </>
+          )}
         </Field>
         <Field label="Purpose">{c.purpose}</Field>
         <Field label="Access">{SCOPE_LABEL[c.scope]}</Field>
@@ -173,7 +180,7 @@ function AccessCard({ consent: c, onRevoked }) {
             </button>
           ) : (
             <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Confirm revoke">
-              <span className="text-sm text-slate-700">Stop {c.clinician.name} from opening your record now?</span>
+              <span className="text-sm text-slate-700">Stop {c.clinicianRole ? `the ${c.clinicianRole} role` : c.clinician?.name} from opening your record now?</span>
               <button
                 type="button"
                 onClick={revoke}
@@ -218,10 +225,12 @@ function GrantForm({ clinicians, active, onGranted }) {
     return [...groups.entries()]
   }, [clinicians])
 
-  const chosen = clinicians.find((c) => c.id === clinicianId)
-  const replacing = active.find((c) => c.clinician.id === clinicianId)
+  const isRole = clinicianId.startsWith('role_')
+  const chosen = isRole ? null : clinicians.find((c) => c.id === clinicianId)
+  const chosenRole = isRole ? clinicianId.replace('role_', '') : null
+  const replacing = active.find((c) => (isRole ? c.clinicianRole === chosenRole : c.clinician?.id === clinicianId))
   const durationLabel = DURATIONS.find(([v]) => String(v) === duration)?.[1]
-  const ready = chosen && purpose.trim().length >= 3
+  const ready = (chosen || chosenRole) && purpose.trim().length >= 3
 
   async function submit(e) {
     e.preventDefault()
@@ -230,12 +239,19 @@ function GrantForm({ clinicians, active, onGranted }) {
     try {
       const { consent } = await request('/api/consent', {
         method: 'POST',
-        body: { clinicianId, purpose: purpose.trim(), scope, durationDays: duration === '' ? null : Number(duration) },
+        body: {
+          clinicianId: isRole ? undefined : clinicianId,
+          clinicianRole: isRole ? chosenRole : undefined,
+          purpose: purpose.trim(),
+          scope,
+          durationDays: duration === '' ? null : Number(duration),
+        },
       })
       setClinicianId('')
       setPurpose('')
       setBusy(false)
-      onGranted(`${consent.clinician.name} can now open your record (${SCOPE_LABEL[consent.scope].toLowerCase()}).`)
+      const targetName = isRole ? `Any ${chosenRole}` : consent.clinician.name
+      onGranted(`${targetName} can now open your record (${SCOPE_LABEL[consent.scope].toLowerCase()}).`)
     } catch (err) {
       setError(err)
       setBusy(false)
@@ -247,10 +263,17 @@ function GrantForm({ clinicians, active, onGranted }) {
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label htmlFor="consent-clinician" className="mb-1 block text-xs font-medium text-slate-600">
-            Clinician
+            Who gets access
           </label>
           <select id="consent-clinician" className={input} value={clinicianId} onChange={(e) => setClinicianId(e.target.value)}>
-            <option value="">Choose a clinician…</option>
+            <option value="">Choose a clinician or role…</option>
+            <optgroup label="Roles (Specialties)">
+              {[...new Set(clinicians.map((c) => c.specialty))].sort().map((specialty) => (
+                <option key={`role_${specialty}`} value={`role_${specialty}`}>
+                  Any {specialty}
+                </option>
+              ))}
+            </optgroup>
             {byState.map(([place, list]) => (
               <optgroup key={place} label={place}>
                 {list.map((c) => (
@@ -319,14 +342,14 @@ function GrantForm({ clinicians, active, onGranted }) {
         <div className="rounded-md bg-slate-50 p-3">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Access request</p>
           <dl className="space-y-1">
-            <Field label="Clinician">{chosen ? `${chosen.name}, ${chosen.facility}` : '—'}</Field>
+            <Field label="Who">{chosen ? `${chosen.name}, ${chosen.facility}` : chosenRole ? `Any ${chosenRole}` : '—'}</Field>
             <Field label="Purpose">{purpose.trim() || '—'}</Field>
             <Field label="Duration">{durationLabel}</Field>
             <Field label="Status">Not granted yet</Field>
           </dl>
           {replacing && (
             <p className="mt-2 text-xs text-amber-800">
-              This replaces {replacing.clinician.name}&apos;s current access ({SCOPE_LABEL[replacing.scope].toLowerCase()}).
+              This replaces {replacing.clinicianRole ? `the ${replacing.clinicianRole} role` : replacing.clinician?.name}&apos;s current access ({SCOPE_LABEL[replacing.scope].toLowerCase()}).
             </p>
           )}
         </div>

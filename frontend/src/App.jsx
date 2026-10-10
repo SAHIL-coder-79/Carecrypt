@@ -12,6 +12,7 @@ import SmartCarePage from './pages/clinician/SmartCarePage.jsx'
 import VisitsPage from './pages/clinician/VisitsPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
+import RegisterPage from './pages/RegisterPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import AccessHistoryPage from './pages/patient/AccessHistoryPage.jsx'
 import ConsentPage from './pages/patient/ConsentPage.jsx'
@@ -40,6 +41,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route
         element={
           <RequireAuth>

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../../auth/context.js'
 import Dialog from '../Dialog.jsx'
+import { EmergencyAccessDialog } from './EmergencyAccessDialog.jsx'
 
 const MODES = [
   { id: 'camera', label: 'Camera' },
@@ -43,7 +44,7 @@ export function ScanPanel({ onClose = () => {} }) {
       navigate(`/clinician/patients/${result.patientId}`)
     } catch (err) {
       const code = err.body?.reason ?? err.body?.error
-      setStatus({ state: 'error', message: FAILURES[code] ?? err.message, code, httpStatus: err.status })
+      setStatus({ state: 'error', message: FAILURES[code] ?? err.message, code, httpStatus: err.status, qrToken: token })
     }
   }
 
@@ -90,7 +91,26 @@ export function ScanPanel({ onClose = () => {} }) {
               Scan again
             </button>
           )}
+          {status.code === 'NO_ACTIVE_CONSENT' && status.qrToken && (
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => setStatus({ ...status, showEmergency: true })}
+                className="rounded bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-red-500"
+              >
+                Request Emergency Break-Glass Access
+              </button>
+            </div>
+          )}
         </div>
+      )}
+
+      {status.showEmergency && (
+        <EmergencyAccessDialog 
+          open={true} 
+          onClose={() => setStatus({ ...status, showEmergency: false })} 
+          qrToken={status.qrToken} 
+        />
       )}
     </div>
   )

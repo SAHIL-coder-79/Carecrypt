@@ -130,3 +130,62 @@ export async function login({ email, password }, req) {
     },
   }
 }
+
+export async function register(body, req) {
+  const { email, password, role, firstName, lastName } = body
+  if (!email || !password || !role || !firstName || !lastName) {
+    throw badRequest('All fields are required.')
+  }
+  
+  const normalisedEmail = email.trim().toLowerCase()
+  if (await findUserByEmail(normalisedEmail)) {
+    throw badRequest('Email already in use.')
+  }
+
+  const { hashPassword } = await import('../auth/password.js')
+  const passwordHash = await hashPassword(password)
+  const displayName = `${firstName} ${lastName}`.trim()
+
+  const { withTransaction, query } = await import('../db/pool.js')
+  
+  const user = await withTransaction(async (client) => {
+    const { rows } = await client.query(
+      `INSERT INTO identity.users (email, password_hash, role, display_name)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [normalisedEmail, passwordHash, role, displayName]
+    )
+    const newUser = rows[0]
+
+    if (role === 'PATIENT') {
+      await client.query(
+        `INSERT INTO clinical.patients (user_id, first_name, last_name, date_of_birth, gender, city, district, state, pincode)
+         VALUES ($1, $2, $3, '1990-01-01', 'UNDISCLOSED', 'City', 'District', 'State', '100000')`,
+        [newUser.id, firstName, lastName]
+      )
+    } else if (role === 'CLINICIAN') {
+      // Pick a random facility
+      const fRows = await client.query('SELECT id FROM clinical.facilities LIMIT 1')
+      const facilityId = fRows.rows[0]?.id
+      
+      const regNo = 'REG-' + Date.now()
+      
+      await client.query(
+        `INSERT INTO clinical.clinicians (user_id, registration_number, first_name, last_name, specialty, facility_id)
+         VALUES ($1, $2, $3, $4, 'General Practice', $5)`,
+        [newUser.id, regNo, firstName, lastName, facilityId]
+      )
+    }
+
+    return newUser
+  })
+
+  await recordAuditEvent({
+    req,
+    action: 'REGISTER',
+    resourceType: 'session',
+    outcome: 'SUCCESS',
+    metadata: { email_registered: normalisedEmail, role },
+  })
+
+  return login({ email: normalisedEmail, password }, req)
+}

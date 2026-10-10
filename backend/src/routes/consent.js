@@ -40,7 +40,15 @@ router.post('/', authenticateToken(), requireRole('PATIENT', { resource: 'CONSEN
   }
 
   const details = []
-  if (!isUuid(body.clinicianId)) details.push({ field: 'clinicianId', message: 'must be a clinician id.' })
+  const hasClinicianId = isUuid(body.clinicianId)
+  const hasClinicianRole = typeof body.clinicianRole === 'string' && body.clinicianRole.length > 0
+  
+  if (!hasClinicianId && !hasClinicianRole) {
+    details.push({ field: 'clinicianId', message: 'must provide either clinician id or role.' })
+  }
+  if (hasClinicianId && hasClinicianRole) {
+    details.push({ field: 'clinicianId', message: 'must provide only one of clinician id or role.' })
+  }
   if (!SCOPES.includes(body.scope)) details.push({ field: 'scope', message: `must be one of ${SCOPES.join(', ')}.` })
   const purpose = typeof body.purpose === 'string' ? body.purpose.trim() : ''
   if (purpose.length < 3 || purpose.length > 200) {
@@ -50,15 +58,17 @@ router.post('/', authenticateToken(), requireRole('PATIENT', { resource: 'CONSEN
   if (durationDays !== null && !(Number.isInteger(durationDays) && durationDays >= 1 && durationDays <= 365)) {
     details.push({ field: 'durationDays', message: 'must be a whole number of days from 1 to 365, or null for "until revoked".' })
   }
-  if (details.length === 0 && !(await consents.clinicianIsActive(body.clinicianId.toLowerCase()))) {
+  if (details.length === 0 && hasClinicianId && !(await consents.clinicianIsActive(body.clinicianId.toLowerCase()))) {
     details.push({ field: 'clinicianId', message: 'no active clinician has this id.' })
   }
   if (details.length > 0) throw validationError(details)
 
-  const clinicianId = body.clinicianId.toLowerCase()
+  const clinicianId = hasClinicianId ? body.clinicianId.toLowerCase() : null
+  const clinicianRole = hasClinicianRole ? body.clinicianRole.trim() : null
   const { id, replaced } = await consents.grant({
     patientId,
     clinicianId,
+    clinicianRole,
     scope: body.scope,
     purpose,
     durationDays,
@@ -74,8 +84,8 @@ router.post('/', authenticateToken(), requireRole('PATIENT', { resource: 'CONSEN
     resourceId: id,
     patientId,
     outcome: 'SUCCESS',
-    reason: `${body.scope} to ${consent.clinician.name}`,
-    metadata: { clinician_id: clinicianId, scope: body.scope, duration_days: durationDays, replaced },
+    reason: `${body.scope} to ${clinicianId ? consent.clinician.name : 'Role: ' + clinicianRole}`,
+    metadata: { clinician_id: clinicianId, clinician_role: clinicianRole, scope: body.scope, duration_days: durationDays, replaced },
   })
 
   res.status(201).json({ consent, replaced })

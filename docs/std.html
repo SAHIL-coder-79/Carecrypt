@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' blob:; style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; font-src data:; worker-src blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f7fc">
+<title>Networking Exam Crash-Course Podcast</title>
+<style>
+:root{--ink:#17233b;--muted:#68758d;--line:#e2e8f2;--paper:#fff;--bg:#f5f7fc;--accent:#5267e8;--accent2:#e9edff;--green:#16876b;--shadow:0 12px 34px #20345c12}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+button{font:inherit;color:inherit}
+header{background:linear-gradient(125deg,#202d50,#354b82);color:#fff;padding:28px 22px 70px}
+.top{max-width:1120px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:20px}
+.brand{font-size:.82rem;letter-spacing:.13em;text-transform:uppercase;font-weight:750;color:#cbd5ff}
+header h1{font-size:clamp(1.9rem,4vw,3.2rem);line-height:1.1;max-width:760px;margin:28px 0 12px;letter-spacing:-.04em}
+header p{max-width:680px;margin:0;color:#dce4ff}
+.tag{border:1px solid #ffffff45;border-radius:999px;padding:7px 12px;font-size:.82rem;white-space:nowrap}
+.layout{max-width:1120px;margin:-42px auto 60px;padding:0 20px;display:grid;grid-template-columns:290px minmax(0,1fr);gap:22px;align-items:start}
+.panel,.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+.sidebar{position:sticky;top:16px;overflow:hidden}
+.player{padding:20px;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);font-weight:750}
+.player h2{font-size:1.12rem;margin:5px 0 2px}
+.now{font-size:.86rem;color:var(--muted);min-height:2.5em}
+.controls{display:flex;gap:9px;align-items:center;margin-top:16px}
+.iconbtn,.playbtn,.speedbtn,.chapter,.reveal{border:0;cursor:pointer}
+.iconbtn{width:38px;height:38px;border-radius:12px;background:#f0f3fa;font-size:1.08rem}
+.playbtn{background:var(--accent);color:#fff;border-radius:13px;padding:10px 16px;font-weight:700;flex:1}
+.playbtn:hover{background:#4055d5}
+.iconbtn:hover,.speedbtn:hover,.chapter:hover{background:var(--accent2)}
+.speedrow{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:.82rem;color:var(--muted)}
+.speedbtn{background:#f0f3fa;border-radius:8px;padding:5px 9px}
+input[type=range]{width:100%;accent-color:var(--accent);margin:14px 0 0}
+.chapters{padding:14px;max-height:48vh;overflow:auto}
+.chapters h3{margin:2px 7px 9px;font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.chapter{display:flex;text-align:left;gap:10px;align-items:baseline;width:100%;border-radius:10px;background:transparent;padding:9px 8px;color:#46536d;font-size:.88rem}
+.chapter span:first-child{color:#8a96ac;font-size:.76rem;font-variant-numeric:tabular-nums}
+.chapter.active{background:var(--accent2);color:#3448be;font-weight:700}
+.main{min-width:0}
+.card{padding:clamp(20px,4vw,36px)}
+.notice{display:flex;gap:11px;align-items:flex-start;padding:14px 16px;background:#fff8e9;border:1px solid #f2e4bf;border-radius:13px;color:#6a5524;font-size:.9rem;margin-bottom:20px}
+.notice strong{color:#4f3d13}
+.lessonhead{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:17px}
+.lessonhead h2{margin:0;font-size:1.45rem;letter-spacing:-.025em}
+.progresslabel{white-space:nowrap;color:var(--muted);font-size:.82rem}
+.progress{height:6px;background:#edf0f7;border-radius:20px;overflow:hidden;margin:0 0 25px}
+.progress div{height:100%;width:0;background:var(--accent);transition:width .2s}
+.transcript{font-size:1rem;line-height:1.8}
+.transcript h3{font-size:1.16rem;margin:1.8em 0 .5em;line-height:1.35}
+.transcript p{margin:.75em 0}
+.transcript .pause{color:#5364c4;background:#f0f2ff;padding:12px 15px;border-radius:12px;border-left:3px solid var(--accent);margin:1em 0}
+.transcript .formula{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f2f5fa;border:1px solid var(--line);padding:12px 15px;border-radius:11px;display:block;white-space:normal;color:#273552}
+.transcript ul{padding-left:1.3em}
+.transcript li{margin:.4em 0}
+.practice{margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}
+.practice h3{margin:0 0 12px}
+.q{border:1px solid var(--line);border-radius:13px;margin:10px 0;overflow:hidden}
+.q summary{cursor:pointer;padding:13px 16px;font-weight:650}
+.q p{padding:0 16px 14px;margin:0;color:#49566e}
+.smallprint{font-size:.8rem;color:var(--muted);margin:20px 0 0}
+.status{font-size:.8rem;color:var(--muted);min-height:1.2em;margin-top:8px}
+footer{text-align:center;color:var(--muted);font-size:.8rem;padding:0 18px 28px}
+@media(max-width:780px){.layout{grid-template-columns:1fr;margin-top:-38px;padding:0 13px;gap:14px}.sidebar{position:static}.chapters{max-height:240px}.top{align-items:flex-start;flex-direction:column;gap:10px}header{padding:24px 18px 65px}.tag{font-size:.76rem}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div class="brand">Offline study session · Unit 1 + Unit 2</div>
+    <div class="tag">Exam tomorrow? Start here.</div>
+  </div>
+  <h1>Networking Exam<br>Crash-Course Podcast</h1>
+  <p>A calm, beginner-friendly audio-style walkthrough: the big ideas, the calculations, and the answer patterns worth remembering.</p>
+</header>
+<div class="layout">
+  <aside class="sidebar panel" aria-label="Audio player and chapter navigation">
+    <section class="player">
+      <div class="eyebrow">Your study player</div>
+      <h2>Listen and follow along</h2>
+      <div class="now" id="now">Ready when you are. Choose a chapter or press play.</div>
+      <div class="controls">
+        <button class="iconbtn" id="prev" aria-label="Previous chapter" title="Previous chapter">⏮</button>
+        <button class="playbtn" id="play" aria-label="Play lesson">▶ Play lesson</button>
+        <button class="iconbtn" id="next" aria-label="Next chapter" title="Next chapter">⏭</button>
+      </div>
+      <div class="speedrow"><span>Voice speed</span><button class="speedbtn" id="slower" aria-label="Slower speech">−</button><strong id="speedLabel">1.0×</strong><button class="speedbtn" id="faster" aria-label="Faster speech">+</button></div>
+      <input id="seek" type="range" min="0" max="100" value="0" aria-label="Lesson position">
+      <div class="status" id="voiceStatus" aria-live="polite">Uses your browser’s built-in synthetic voice; this is not human-recorded audio.</div>
+    </section>
+    <nav class="chapters" aria-label="Lesson chapters">
+      <h3>Chapters</h3>
+      <div id="chapterList"></div>
+    </nav>
+  </aside>
+  <main class="main">
+    <article class="card">
+      <div class="notice"><span aria-hidden="true">✦</span><div><strong>Made for learning, not cramming blindly.</strong> Read the transcript, say the worked steps aloud, then test yourself. The audio is generated locally with browser speech synthesis.</div></div>
+      <div class="lessonhead">
+        <h2 id="chapterTitle">Welcome</h2>
+        <span class="progresslabel" id="progressLabel">Chapter 1 of 1</span>
+      </div>
+      <div class="progress" aria-label="Chapter progress"><div id="progressBar"></div></div>
+      <div class="transcript" id="transcript" aria-live="polite"></div>
+      <section class="practice" id="practice">
+        <h3>Quick practice — reveal an answer</h3>
+        <details class="q"><summary>1. With even parity, what parity bit goes with 1011?</summary><p>There are three 1s, an odd count. Add parity bit 1 to make four 1s, an even count.</p></details>
+        <details class="q"><summary>2. A noiseless channel has bandwidth 3 kHz and 4 signal levels. What is its Nyquist maximum?</summary><p>Nyquist: 2B log₂L = 2 × 3000 × log₂4 = 6000 × 2 = 12,000 bits/s, or 12 kb/s.</p></details>
+        <details class="q"><summary>3. Which ARQ retransmits only the missing or damaged frame?</summary><p>Selective Repeat. Go-Back-N resends the error frame and later frames in its window; Stop-and-Wait has only one outstanding frame.</p></details>
+        <details class="q"><summary>4. What does the receiver do with a Hamming syndrome of 101?</summary><p>Read it as binary 5: the error is at position 5 (with the stated position numbering). Flip that bit.</p></details>
+      </section>
+      <p class="smallprint">Tip: browser speech voices and availability vary by device. If speech synthesis is unavailable, the complete lesson remains readable above.</p>
+    </article>
+  </main>
+</div>
+<footer>All lesson content and controls run in this page. No account, network, or saved data required.</footer>
+<script>
+const chapters=[
+{title:"Start here: the map",text:`<h3>Welcome to the crash course</h3><p>Hi! Take a breath. We are going to build this from the ground up. A computer network moves information between devices. The physical layer moves raw signals; the data link layer organizes those bits into frames and handles a local link.</p><p>Think of sending a message as a journey. The physical layer is the road and the actual movement. The data link layer is the local delivery system that packages, labels, and checks each delivery.</p><p>We will cover the essential ideas, work through calculations carefully, and finish with answer templates and a rapid recap. When you hear a pause, actually try the question before continuing.</p>`},
+{title:"OSI and TCP/IP: where layers fit",text:`<h3>A layered way to think</h3><p>Layers divide a complicated networking job into manageable tasks. In the seven-layer OSI model, from bottom to top: Physical, Data Link, Network, Transport, Session, Presentation, Application.</p><p>For this exam, know the bottom two especially well. Physical sends bits as electrical, optical, or radio signals. Data Link delivers frames over one link, uses hardware addresses, and may detect errors. Network routes packets between networks. Transport provides end-to-end process delivery. The upper three support sessions, data representation, and user-facing network services.</p><p>TCP/IP is the practical Internet model, often shown as Link, Internet, Transport, and Application. OSI is a useful reference model; TCP/IP describes the Internet protocol suite. Names and exact layer groupings vary slightly across textbooks, so follow your course's diagram.</p><p>Encapsulation: as data moves down the stack, each layer adds its own header; the receiver removes them in reverse order. A link-layer frame carries a network-layer packet.</p><div class="pause"><strong>Pause:</strong> Which layer sends raw bits? Which layer puts bits into frames?</div>`},
+{title:"Physical layer: signals and impairments",text:`<h3>What the physical layer does</h3><p>The physical layer defines how bits become signals: connector and pin details, signal levels, timing, transmission modes, and the medium. A bit is an abstract zero or one; it must be represented physically.</p><p>Common impairments are attenuation (signal loses strength), distortion (signal shape or timing changes), and noise (unwanted energy is added). Noise can make a receiver mistake one bit for another. Repeaters regenerate a signal; amplifiers boost it, including noise.</p><p>Bandwidth can mean a frequency range, measured in hertz, or—in everyday networking—capacity in bits per second. Read the units in a question carefully. A channel's capacity depends on bandwidth, signal choices, and noise.</p><h3>Bit rate and baud rate</h3><p>Bit rate counts bits per second. Baud rate counts symbols per second. If each symbol represents k bits, then bit rate = baud rate × k. For M distinct signal levels, k = log₂(M) bits per symbol when M is a suitable power of two.</p><span class="formula">Bit rate = baud rate × bits per symbol<br>Example: 2400 baud × 4 bits/symbol = 9600 bit/s</span><p>Do not call baud and bit rate the same unless each symbol carries exactly one bit.</p><div class="pause"><strong>Pause:</strong> At 1000 baud, with 8 possible signal levels, what is the bit rate? (There are 3 bits per symbol, so 3000 bit/s.)</div>`},
+{title:"Line coding families",text:`<h3>Representing bits as line signals</h3><p>Line coding maps a bit stream onto a signal. A useful comparison asks: does it need a separate clock, what is its DC component, how much bandwidth does it use, and how does it handle long runs of identical bits?</p><ul><li><strong>Unipolar:</strong> one polarity for one value, often zero volts for the other. Simple, but a DC component and synchronization issues can result.</li><li><strong>Polar NRZ:</strong> positive and negative levels represent data. NRZ-L uses level; NRZ-I uses a transition for one bit value. Long unchanged runs can make clock recovery hard.</li><li><strong>RZ:</strong> signal returns to zero within each bit. It can aid timing but uses more bandwidth.</li><li><strong>Manchester:</strong> a transition occurs in the middle of each bit, giving clock information; it requires relatively high bandwidth. Convention determines which transition means 0 or 1.</li><li><strong>AMI / bipolar:</strong> zero is zero voltage; successive marks alternate positive and negative, reducing DC. Long zero runs still challenge timing.</li></ul><p>Block coding and scrambling add structure or transitions to improve synchronization. Remember the trade-off: synchronization, bandwidth, DC balance, and complexity.</p><div class="pause"><strong>Pause:</strong> Which code guarantees a mid-bit transition useful for clock recovery? Manchester.</div>`},
+{title:"Capacity: Nyquist and Shannon",text:`<h3>Two formulas, two assumptions</h3><p>Nyquist gives the maximum bit rate for an ideal noiseless band-limited channel:</p><span class="formula">Nyquist: C = 2B log₂(L) bits/s</span><p>B is bandwidth in hertz; L is the number of distinct signal levels. Example: B = 3000 Hz and L = 4. First, log₂4 = 2. Then C = 2 × 3000 × 2 = 12,000 bit/s.</p><p>Shannon gives the theoretical maximum capacity of a noisy channel:</p><span class="formula">Shannon: C = B log₂(1 + S/N) bits/s</span><p>S/N is the linear signal-to-noise power ratio, not decibels. If given dB, convert first: (S/N)linear = 10^(dB/10). Example: B = 3000 Hz and S/N = 30, so C = 3000 log₂31 ≈ 14,856 bit/s. This is a ceiling, not a promise of a practical rate.</p><p>In a problem, identify which formula matches its assumptions; substitute with units; evaluate the logarithm; state bits per second. If both limits apply, the achievable rate cannot exceed the smaller limit.</p><div class="pause"><strong>Pause and solve:</strong> Noiseless B = 4000 Hz, L = 2. Nyquist gives 2 × 4000 × log₂2 = 8000 bit/s.</div>`},
+{title:"Parity, Hamming code, and CRC",text:`<h3>Parity: a quick error check</h3><p>Even parity chooses a parity bit so the total number of 1s is even. Odd parity chooses it so the total is odd. Example data 1011 contains three ones. For even parity, append 1; for odd parity, append 0. At the receiver, a parity mismatch indicates an error, but parity alone cannot locate it and may miss an even number of flipped bits.</p><h3>Hamming (7,4): encode step by step</h3><p>Use positions 1 through 7, with parity bits at 1, 2, and 4. Put four data bits into positions 3, 5, 6, 7. We will use even parity, and write position 1 first.</p><p>Example data 1 0 1 1: place d₁=1 at 3, d₂=0 at 5, d₃=1 at 6, d₄=1 at 7. Parity groups are: p₁ checks positions 1,3,5,7; p₂ checks 2,3,6,7; p₄ checks 4,5,6,7.</p><p>For p₁, known bits are 1,0,1: two ones, so p₁=0. For p₂, known bits are 1,1,1: three ones, so p₂=1. For p₄, known bits are 0,1,1: two ones, so p₄=0. The codeword, positions 1 to 7, is <strong>0110011</strong>.</p><h3>Syndrome: locate and correct one error</h3><p>At the receiver, recompute checks. Let s₁ be the result for positions 1,3,5,7; s₂ for 2,3,6,7; s₄ for 4,5,6,7. A failed even-parity check is 1. Read the syndrome as the binary number s₄s₂s₁. If checks give s₄=1, s₂=0, s₁=1, syndrome 101₂ = 5: flip bit at position 5. Syndrome 000 means no detected single-bit error.</p><p>Hamming(7,4) corrects a single-bit error under its assumptions. A nonzero syndrome with multiple errors can mislead; do not claim it safely corrects arbitrary multiple errors.</p><h3>CRC, briefly</h3><p>CRC treats bits as a polynomial over binary arithmetic (XOR, with no carries). Choose a generator of degree r, append r zeros to the data, divide modulo 2 by the generator, and replace those zeros with the r-bit remainder. The receiver divides the received codeword by the same generator: a zero remainder means no error was detected. CRC is excellent at detecting many common error patterns, but it is not an error-correction method and a zero remainder does not prove perfection.</p><div class="pause"><strong>Pause:</strong> For syndrome s₄s₂s₁ = 011, which bit position is flagged? Binary 3: position 3.</div>`},
+{title:"Data link layer: framing and access",text:`<h3>From a stream of bits to frames</h3><p>The data link layer turns a stream into frames so a receiver can identify boundaries. Common approaches include a length field, a special flag with byte stuffing, or a bit flag with bit stuffing. In bit stuffing, the sender inserts a 0 after a run of five 1s so data cannot imitate the flag; the receiver removes the inserted bit.</p><p>A frame may contain destination and source link addresses, control information, payload, and an error-detection field. Framing answers “where does this unit start and end?” Error detection answers “does it appear damaged?”</p><h3>Shared medium access: CSMA/CD and CSMA/CA</h3><p>CSMA means listen before sending. In classic shared, half-duplex Ethernet, CSMA/CD listens, transmits, detects a collision, stops and sends a jam signal, then retries after a randomized backoff. Modern switched full-duplex Ethernet avoids collisions, so it does not use collision detection in that way.</p><p>Wi-Fi commonly uses CSMA/CA: it tries to avoid collisions using waiting, random backoff, and acknowledgments. A wireless device often cannot reliably listen for a collision while it transmits. RTS/CTS may help with hidden stations; it is not used for every frame.</p><p><strong>Contrast:</strong> CD detects a collision after transmission begins; CA attempts to reduce the chance beforehand.</p><div class="pause"><strong>Pause:</strong> Which approach is associated with traditional shared Ethernet, and which with Wi-Fi? CD for classic Ethernet; CA for Wi-Fi.</div>`},
+{title:"ARQ: reliable delivery",text:`<h3>Automatic Repeat reQuest</h3><p>ARQ combines error detection with acknowledgments, timers, sequence numbers, and retransmission. If a frame is lost or damaged, the sender tries again.</p><ul><li><strong>Stop-and-Wait:</strong> send one frame, wait for its acknowledgment, then send the next. Simple, but a long round-trip delay can leave the link idle. Sequence numbers help distinguish a retransmission from a new frame.</li><li><strong>Go-Back-N:</strong> pipeline multiple frames within a window. If one is lost, the receiver typically accepts in-order frames and discards later out-of-order ones; the sender retransmits the missing frame and following outstanding frames. With m-bit sequence numbers, the usual maximum sender window is 2ᵐ−1.</li><li><strong>Selective Repeat:</strong> also pipelines, but buffers acceptable out-of-order frames and retransmits only missing or damaged frames. It needs more buffering and careful sequence-number/window sizing; the usual maximum window is 2ᵐ⁻¹.</li></ul><p>Exam shortcut: Stop-and-Wait = one at a time. Go-Back-N = repeat from the error onward. Selective Repeat = repeat only the specific losses.</p><div class="pause"><strong>Pause:</strong> Frame 4 is lost, but 5 and 6 arrived. Which method can keep 5 and 6 and resend only 4? Selective Repeat.</div>`},
+{title:"ARP: finding a local link address",text:`<h3>IP address to link-layer delivery</h3><p>ARP, in IPv4 networks, discovers the link-layer address associated with a local IPv4 address. A device broadcasts an ARP request on its local network: “Who has this IP?” The owner replies with its hardware address. Results can be cached temporarily.</p><p>If the destination is outside the local subnet, a host usually sends the frame to its default gateway's link address, not directly to the distant host's hardware address. ARP is local-link resolution; routers do not forward ordinary ARP broadcasts. IPv6 uses Neighbor Discovery rather than ARP.</p><div class="pause"><strong>Pause:</strong> Are IP addresses and Ethernet MAC addresses interchangeable? No: they serve different layers and jobs.</div>`},
+{title:"CSMA/CD minimum frame-size calculation",text:`<h3>Why does classic Ethernet have a minimum frame size?</h3><p>In classic shared half-duplex Ethernet, a sender must still be transmitting when a worst-case collision can propagate back to it. Otherwise it could finish before detecting the collision. Therefore the frame transmission time must be at least the round-trip propagation delay.</p><span class="formula">Minimum frame bits ≥ bit rate × round-trip propagation time</span><p>Step by step: find the one-way propagation delay across the network diameter; multiply by two for round trip; multiply seconds by the bit rate in bits/s to get bits; round up if the question asks for a whole number of bits or bytes.</p><p>Example: bit rate = 10 Mb/s and one-way worst-case delay = 25.6 μs. Round trip = 51.2 μs = 51.2 × 10⁻⁶ s. Minimum bits = 10 × 10⁶ × 51.2 × 10⁻⁶ = 512 bits = 64 bytes.</p><p>Check your units before multiplying. Do not confuse propagation delay with frame transmission time. This collision-domain argument applies to classic half-duplex CSMA/CD, not ordinary modern full-duplex switched links.</p><div class="pause"><strong>Pause:</strong> At 100 Mb/s and a round-trip delay of 5 μs, the minimum is 100 × 10⁶ × 5 × 10⁻⁶ = 500 bits. Convert to bytes only if requested.</div>`},
+{title:"Exam answer templates",text:`<h3>Write answers that earn method marks</h3><p><strong>Numerical question:</strong> State the formula and what each symbol means. Convert units first. Substitute values with units. Show intermediate arithmetic. Give a final value and unit, then mention any assumption.</p><p><strong>Parity or Hamming:</strong> State the parity convention. Label bit positions. Fill data positions, list each parity-check group, calculate parity bits, and show the final codeword. For correction, write syndrome bits in the specified order, convert to a position, and flip that bit.</p><p><strong>Compare and contrast:</strong> Define both methods, compare how they work, then give one practical consequence. Example: Go-Back-N retransmits from a loss onward; Selective Repeat buffers out-of-order frames and resends only missing ones, reducing needless retransmission at the cost of complexity.</p><p><strong>Layer question:</strong> Name the layer, its main job, and a concrete unit or example: Physical—signals/bits; Data Link—frames and local delivery; Network—packets and routing; Transport—end-to-end process communication.</p><p><strong>Capacity question:</strong> Identify noiseless versus noisy, choose Nyquist versus Shannon, clarify whether S/N is linear or dB, calculate, and state bits/s. Never mix hertz and bits/s as though they were the same quantity.</p><div class="pause"><strong>Pause:</strong> Before handing in a numerical answer, ask: formula? units? substitution? final unit? assumption?</div>`},
+{title:"Rapid recap and finish",text:`<h3>Your last-minute memory sweep</h3><ul><li>Physical layer: signals, media, timing, bit rate; impairments include attenuation, distortion, and noise.</li><li>Bit rate = baud × bits per symbol. Nyquist: 2B log₂L for ideal noiseless signaling. Shannon: B log₂(1+S/N) for noisy-channel capacity.</li><li>Parity detects some errors; Hamming(7,4) uses parity positions 1, 2, 4. Syndrome s₄s₂s₁ gives the single-bit position to flip.</li><li>CRC uses modulo-2 division for error detection. Line coding trades timing, bandwidth, and DC balance.</li><li>Data Link frames bits, identifies local endpoints, and can detect errors. ARQ retransmits: one-at-a-time, from-the-error onward, or only the missing frame.</li><li>ARP resolves local IPv4 to a link address. CSMA/CD detects collisions on classic shared Ethernet; CSMA/CA tries to avoid them in Wi-Fi.</li><li>Classic CSMA/CD minimum frame bits ≥ bit rate × round-trip propagation delay.</li></ul><p>You have a map of the topic now. For the remaining study time, redo the parity, Hamming, Nyquist, and minimum-frame examples from memory, then explain each ARQ method in one sentence. If you can show the steps and units, you are in good shape.</p><div class="pause"><strong>One final breath:</strong> Say aloud one idea you understand better now. You have done useful work. Good luck tomorrow!</div>`}
+];
+const transcript=document.getElementById("transcript"),titleEl=document.getElementById("chapterTitle"),nowEl=document.getElementById("now"),playBtn=document.getElementById("play"),seek=document.getElementById("seek"),bar=document.getElementById("progressBar"),progressLabel=document.getElementById("progressLabel"),chapterList=document.getElementById("chapterList"),voiceStatus=document.getElementById("voiceStatus");
+let current=0,rate=1,playing=false,paused=false,utterance=null,voices=[],seekTimer=null;
+function plain(html){let d=document.createElement("div");d.innerHTML=html;return d.innerText||d.textContent||""}
+function render(i){current=(i+chapters.length)%chapters.length;const c=chapters[current];titleEl.textContent=c.title;transcript.innerHTML=c.text;progressLabel.textContent=`Chapter ${current+1} of ${chapters.length}`;bar.style.width=`${((current+1)/chapters.length)*100}%`;nowEl.textContent=c.title;[...chapterList.children].forEach((b,n)=>{b.classList.toggle("active",n===current);b.setAttribute("aria-current",n===current?"step":"false")});seek.value=0;window.scrollTo({top:0,behavior:"smooth"})}
+function stopSpeech(){if("speechSynthesis"in window){speechSynthesis.cancel()}playing=false;paused=false;utterance=null;playBtn.textContent="▶ Play lesson";playBtn.setAttribute("aria-label","Play lesson");clearInterval(seekTimer);seek.value=0}
+function updateRate(){document.getElementById("speedLabel").textContent=rate.toFixed(1)+"×"}
+function speakCurrent(){if(!("speechSynthesis"in window)||!("SpeechSynthesisUtterance"in window)){voiceStatus.textContent="Speech synthesis is not available in this browser. Read the transcript instead.";return}speechSynthesis.cancel();const text=plain(chapters[current].text);utterance=new SpeechSynthesisUtterance(text);utterance.rate=rate;if(voices.length){const preferred=voices.find(v=>/^en[-_]/i.test(v.lang))||voices[0];utterance.voice=preferred}utterance.onstart=()=>{playing=true;paused=false;playBtn.textContent="Ⅱ Pause";playBtn.setAttribute("aria-label","Pause lesson");voiceStatus.textContent="Speaking with your browser’s built-in synthetic voice.";seekTimer=setInterval(()=>{if(playing&&!paused)seek.value=Math.min(99,+seek.value+0.2)},1200)};utterance.onend=()=>{playing=false;paused=false;playBtn.textContent="▶ Play lesson";playBtn.setAttribute("aria-label","Play lesson");seek.value=100;clearInterval(seekTimer);voiceStatus.textContent="Chapter audio finished. Choose another chapter or replay."};utterance.onerror=()=>{playing=false;paused=false;playBtn.textContent="▶ Play lesson";clearInterval(seekTimer);voiceStatus.textContent="Speech could not start here. The transcript is ready to read."};speechSynthesis.speak(utterance)}
+playBtn.addEventListener("click",()=>{if(!("speechSynthesis"in window)){speakCurrent();return}if(playing&&!paused){speechSynthesis.pause();paused=true;playBtn.textContent="▶ Resume";playBtn.setAttribute("aria-label","Resume lesson");voiceStatus.textContent="Speech paused."}else if(playing&&paused){speechSynthesis.resume();paused=false;playBtn.textContent="Ⅱ Pause";playBtn.setAttribute("aria-label","Pause lesson");voiceStatus.textContent="Speech resumed."}else speakCurrent()});
+document.getElementById("prev").addEventListener("click",()=>{stopSpeech();render(current-1)});
+document.getElementById("next").addEventListener("click",()=>{stopSpeech();render(current+1)});
+document.getElementById("slower").addEventListener("click",()=>{rate=Math.max(.6,Math.round((rate-.1)*10)/10);updateRate();if(playing&&!paused)speakCurrent()});
+document.getElementById("faster").addEventListener("click",()=>{rate=Math.min(1.6,Math.round((rate+.1)*10)/10);updateRate();if(playing&&!paused)speakCurrent()});
+seek.addEventListener("input",()=>{let n=Math.round((+seek.value/100)*(chapters.length-1));if(n!==current){stopSpeech();render(n)}});
+chapters.forEach((c,i)=>{const b=document.createElement("button");b.className="chapter";b.innerHTML=`<span>${String(i+1).padStart(2,"0")}</span><span>${c.title}</span>`;b.addEventListener("click",()=>{stopSpeech();render(i)});chapterList.appendChild(b)});
+if("speechSynthesis"in window){voices=speechSynthesis.getVoices();speechSynthesis.addEventListener?.("voiceschanged",()=>{voices=speechSynthesis.getVoices()})}
+render(0);
+</script>
+</body>
+</html>

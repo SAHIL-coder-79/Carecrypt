@@ -13,7 +13,7 @@ import {
 } from '../../components/record/sections.jsx'
 import { ArrowLeftIcon, PlusIcon, SparkIcon } from '../../components/icons.jsx'
 import ServerRefusal from '../../components/ServerRefusal.jsx'
-import { Alert, Badge, Button, ButtonLink, Card, LoadingState, Withheld } from '../../components/ui.jsx'
+import { Alert, Badge, StatusBadge, Button, ButtonLink, Card, LoadingState, Withheld } from '../../components/ui.jsx'
 import { formatDate, SCOPE, titleCase } from '../../lib/format.js'
 import { useApiData } from '../../lib/useApiData.js'
 
@@ -165,7 +165,11 @@ function PatientHeader({ patient, access, canAddVisit, onAddVisit, refreshing })
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-semibold tracking-tight">{d.fullName}</h1>
-            <Badge tone={SCOPE_TONE[access.scope]}>Consent: {SCOPE[access.scope].label}</Badge>
+            {access.via === 'EMERGENCY' ? (
+              <StatusBadge status="EMERGENCY_ACTIVE" />
+            ) : (
+              <Badge tone={SCOPE_TONE[access.scope]}>Consent: {SCOPE[access.scope].label}</Badge>
+            )}
             {refreshing && <span className="text-xs text-slate-400">Refreshing…</span>}
           </div>
           <p className="mt-1 text-sm text-slate-600">

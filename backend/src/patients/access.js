@@ -55,23 +55,34 @@ export async function authorizePatientAccess(
   } else if (role === 'CLINICIAN') {
     const { rows } = await query(
       `SELECT c.id AS clinician_id,
-              (SELECT cr.scope
-                 FROM clinical.consent_records cr
-                 JOIN clinical.patients p ON p.id = cr.patient_id AND p.is_active
-                WHERE cr.patient_id = $2
-                  AND cr.clinician_id = c.id
-                  AND cr.granted_at <= now()
-                  AND (cr.expires_at IS NULL OR cr.expires_at > now())
-                  AND (cr.revoked_at IS NULL OR cr.revoked_at > now())
-                ORDER BY CASE cr.scope WHEN 'FULL_RECORD' THEN 3 WHEN 'VISIT_HISTORY' THEN 2 ELSE 1 END DESC
-                LIMIT 1) AS scope
+              acc.scope,
+              acc.via
          FROM clinical.clinicians c
+         LEFT JOIN LATERAL (
+              SELECT combined.scope, combined.via
+                FROM (
+                  SELECT cr.scope, cr.granted_at, 'CONSENT' as via, cr.expires_at, cr.revoked_at
+                    FROM clinical.consent_records cr
+                   WHERE cr.patient_id = $2
+                     AND (cr.clinician_id = c.id OR cr.clinician_role = c.specialty OR cr.clinician_role = c.user_role::text)
+                  UNION ALL
+                  SELECT ea.scope, ea.granted_at, 'EMERGENCY' as via, ea.expires_at, ea.revoked_at
+                    FROM clinical.emergency_access_records ea
+                   WHERE ea.patient_id = $2
+                     AND ea.clinician_id = c.id
+                ) as combined
+               WHERE combined.granted_at <= now()
+                 AND (combined.expires_at IS NULL OR combined.expires_at > now())
+                 AND (combined.revoked_at IS NULL OR combined.revoked_at > now())
+               ORDER BY CASE combined.scope WHEN 'FULL_RECORD' THEN 3 WHEN 'VISIT_HISTORY' THEN 2 ELSE 1 END DESC, combined.via DESC
+               LIMIT 1
+         ) acc ON true
         WHERE c.user_id = $1 AND c.is_active`,
       [userId, patientId],
     )
     if (!rows[0]) await deny(req, patientId, section, 'NO_CLINICIAN_PROFILE', action)
     if (!rows[0].scope) await deny(req, patientId, section, 'NO_ACTIVE_CONSENT', action)
-    grant = { via: 'CONSENT', scope: rows[0].scope, clinicianId: rows[0].clinician_id }
+    grant = { via: rows[0].via, scope: rows[0].scope, clinicianId: rows[0].clinician_id }
   } else {
     // requireRole() already stops other roles; this is a second line of defence.
     await deny(req, patientId, section, 'ROLE_NOT_PERMITTED', action)

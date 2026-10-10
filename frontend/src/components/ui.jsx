@@ -25,6 +25,30 @@ export function Badge({ tone = 'neutral', children, className = '' }) {
   )
 }
 
+export function StatusBadge({ status, className = '' }) {
+  const configs = {
+    ACTIVE: { tone: 'green', icon: CheckCircleIcon, label: 'Active' },
+    REVOKED: { tone: 'neutral', icon: AlertCircleIcon, label: 'Revoked' },
+    EXPIRED: { tone: 'neutral', icon: InfoIcon, label: 'Expired' },
+    PENDING: { tone: 'amber', icon: InfoIcon, label: 'Pending' },
+    DENIED: { tone: 'red', icon: AlertCircleIcon, label: 'Denied' },
+    EMERGENCY_ACTIVE: { tone: 'red', icon: AlertTriangleIcon, label: 'Emergency Active' },
+    EMERGENCY_EXPIRED: { tone: 'neutral', icon: InfoIcon, label: 'Emergency Expired' },
+  }
+  
+  const config = configs[status] || { tone: 'neutral', icon: InfoIcon, label: status }
+  const Icon = config.icon
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${TONES[config.tone]} ${className}`}
+    >
+      {Icon && <Icon className="h-3.5 w-3.5 opacity-80" />}
+      {config.label}
+    </span>
+  )
+}
+
 export function Button({ variant = 'primary', size = 'md', className = '', type = 'button', ...props }) {
   return <button type={type} className={buttonClass(variant, size, className)} {...props} />
 }

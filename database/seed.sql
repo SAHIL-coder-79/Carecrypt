@@ -28,8 +28,6 @@
 --     a denied clinician without consent, and a failed login.
 -- =============================================================================
 
-\set ON_ERROR_STOP on
-
 BEGIN;
 
 -- -----------------------------------------------------------------------------
@@ -254,7 +252,7 @@ JOIN clinical.clinicians c ON c.registration_number = pc.reg;
 CREATE TEMP TABLE seed_template (
   template text PRIMARY KEY, chief_complaint text, notes text,
   temp numeric, pulse int, sys int, dia int, rr int, spo2 int
-) ON COMMIT DROP;
+);
 
 INSERT INTO seed_template VALUES
   ('dengue',        'Fever with body ache for 3 days',      'NS1 antigen positive. Platelets 1.1 lakh. Advised fluids and warning signs.', 39.1, 102, 110, 70, 20, 97),
@@ -275,7 +273,7 @@ INSERT INTO seed_template VALUES
   ('anaemia',       'Tiredness and dizziness',              'Pallor present. Hb 9.2 g/dL.',                                               36.8,  96, 108, 68, 18, 98),
   ('hypothyroid_review','Thyroid follow-up',                'TSH 3.1 mIU/L on current dose.',                                             36.5,  68, 124, 80, 16, 98);
 
-CREATE TEMP TABLE seed_template_symptom (template text, symptom text, severity text, duration int) ON COMMIT DROP;
+CREATE TEMP TABLE seed_template_symptom (template text, symptom text, severity text, duration int);
 INSERT INTO seed_template_symptom VALUES
   ('dengue','fever','SEVERE',3), ('dengue','headache','MODERATE',3), ('dengue','body_ache','MODERATE',3),
   ('dengue','retro_orbital_pain','MODERATE',2), ('dengue','rash','MILD',1),
@@ -295,7 +293,7 @@ INSERT INTO seed_template_symptom VALUES
   ('anaemia','fatigue','MODERATE',30), ('anaemia','dizziness','MILD',10),
   ('hypothyroid_review','fatigue','MILD',30);
 
-CREATE TEMP TABLE seed_template_dx (template text, code text, dx_type text, is_primary boolean, notes text) ON COMMIT DROP;
+CREATE TEMP TABLE seed_template_dx (template text, code text, dx_type text, is_primary boolean, notes text);
 INSERT INTO seed_template_dx VALUES
   ('dengue','A90','CONFIRMED',true,'NS1 positive'), ('dengue','B54','DIFFERENTIAL',false,'Malaria RDT negative'),
   ('malaria','B54','CONFIRMED',true,'RDT positive'),
@@ -318,7 +316,7 @@ INSERT INTO seed_template_dx VALUES
 -- adult_dose NULL = not given to adults; child_dose NULL = same as adult.
 CREATE TEMP TABLE seed_template_med (
   template text, med text, adult_dose text, child_dose text, frequency text, route text, days int, instructions text
-) ON COMMIT DROP;
+);
 INSERT INTO seed_template_med VALUES
   ('dengue','paracetamol','650 mg','250 mg','Three times a day','ORAL',5,'Avoid NSAIDs and aspirin'),
   ('dengue','oral_rehydration_salts','1 sachet in 1 L water',NULL,'Sip through the day','ORAL',5,NULL),
@@ -357,7 +355,7 @@ INSERT INTO seed_template_med VALUES
 CREATE TEMP TABLE seed_visit_plan (
   ord serial PRIMARY KEY, visit_id uuid NOT NULL DEFAULT gen_random_uuid(),
   mrn text, visit_at timestamptz, reg text, template text, visit_type text
-) ON COMMIT DROP;
+);
 
 INSERT INTO seed_visit_plan (mrn, visit_at, reg, template, visit_type) VALUES
   -- Pune

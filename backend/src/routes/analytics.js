@@ -8,6 +8,7 @@ import { authenticateToken } from '../middleware/authenticate.js'
 import { requireRole } from '../middleware/requireRole.js'
 import { openInferenceEvent, raiseSecurityEvent } from '../security/events.js'
 import { detect, NARROWING_STEPS, PROBING_SUPPRESSED, recentQueries, WINDOW_MINUTES } from '../security/inference.js'
+import { getOutbreakDetection } from '../analytics/anomaly.js'
 
 // ADMIN population analytics. Aggregate only: every response is built from the
 // suppressed views in the analytics schema, read through the carecrypt_analytics
@@ -153,6 +154,18 @@ router.get('/by-age-group', async (req, res) => {
   const privacy = data.privacy(overview.k, ageGroups)
   await audit(req, 'by-age-group', {}, privacy.suppressedCells)
   res.json({ label: LABEL, ageGroups, privacy })
+})
+
+router.get('/outbreak-detection', async (req, res) => {
+  const q = readQuery(req, ['district', 'category'])
+  if (!q.district || !q.category) {
+    throw validationError([{ field: 'district/category', message: 'Both district and category are required.' }])
+  }
+  
+  const result = await getOutbreakDetection(q.district, q.category)
+  await audit(req, 'outbreak-detection', { district: q.district, category: q.category }, 0)
+  
+  res.json(result)
 })
 
 // GET /api/analytics/query?district=Pune&category=INFECTIOUS&month=2026-09

@@ -210,6 +210,87 @@ router.post('/:patientId/visits', writeGuard, async (req, res) => {
   res.status(201).json({ visit: toVisit(row) })
 })
 
+// Emergency access: break-glass
+router.post('/:patientId/emergency-access', authenticateToken(), requireRole('CLINICIAN', { resource: 'EMERGENCY_ACCESS', patientParam: 'patientId', securityEvent: true }), async (req, res) => {
+  const patientId = parsePatientId(req.params.patientId)
+  const body = req.body ?? {}
+  
+  const details = []
+  if (!body.reason || typeof body.reason !== 'string' || body.reason.trim().length < 5) {
+    details.push({ field: 'reason', message: 'must provide a valid emergency reason (at least 5 characters).' })
+  }
+  const SCOPES = ['FULL_RECORD', 'VISIT_HISTORY', 'SUMMARY_ONLY']
+  if (!SCOPES.includes(body.scope)) {
+    details.push({ field: 'scope', message: `must be one of ${SCOPES.join(', ')}.` })
+  }
+  if (!Number.isInteger(body.durationHours) || body.durationHours < 1 || body.durationHours > 24) {
+    details.push({ field: 'durationHours', message: 'must be between 1 and 24 hours.' })
+  }
+  if (details.length > 0) {
+    throw new HttpError(400, 'BAD_REQUEST', 'Validation failed.', { body: { error: 'VALIDATION_FAILED', details } })
+  }
+
+  // Load patient to ensure it exists and is active
+  await repo.getPatient(patientId).then(p => { if (!p) throw new HttpError(404, 'NOT_FOUND', 'Patient record not found.') })
+
+  const { rows: clinRows } = await query('SELECT id FROM clinical.clinicians WHERE user_id = $1 AND is_active', [req.user.id])
+  if (!clinRows[0]) {
+    throw new HttpError(403, 'FORBIDDEN', 'No active clinician profile.')
+  }
+  const clinicianId = clinRows[0].id
+
+  const { rows } = await query(
+    `INSERT INTO clinical.emergency_access_records 
+      (patient_id, clinician_id, scope, reason, expires_at, recorded_by)
+     VALUES ($1, $2, $3, $4, now() + interval '1 hour' * $5, $6)
+     RETURNING id, scope, expires_at`,
+    [patientId, clinicianId, body.scope, body.reason.trim(), body.durationHours, req.user.id]
+  )
+  const record = rows[0]
+
+  await recordAuditEvent({
+    req,
+    user: req.user,
+    action: 'EMERGENCY_ACCESS_GRANT',
+    resourceType: 'emergency_access',
+    resourceId: record.id,
+    patientId,
+    outcome: 'SUCCESS',
+    reason: `Break-glass emergency access for ${body.reason}`,
+    metadata: { scope: body.scope, duration_hours: body.durationHours, clinician_id: clinicianId }
+  })
+
+  res.status(201).json({ emergencyAccess: record })
+})
+
+router.delete('/:patientId/emergency-access/:id', authenticateToken(), requireRole('CLINICIAN', { resource: 'EMERGENCY_ACCESS_REVOKE', patientParam: 'patientId', securityEvent: true }), async (req, res) => {
+  const patientId = parsePatientId(req.params.patientId)
+  const id = req.params.id
+
+  const { rows } = await query(
+    `UPDATE clinical.emergency_access_records
+        SET revoked_at = now(), revoked_reason = $1
+      WHERE id = $2 AND patient_id = $3 AND revoked_at IS NULL
+      RETURNING id, scope, clinician_id`,
+    ['Revoked manually', id, patientId]
+  )
+  if (!rows[0]) throw new HttpError(404, 'NOT_FOUND', 'Emergency access record not found or already revoked.')
+
+  await recordAuditEvent({
+    req,
+    user: req.user,
+    action: 'EMERGENCY_ACCESS_REVOKE',
+    resourceType: 'emergency_access',
+    resourceId: id,
+    patientId,
+    outcome: 'SUCCESS',
+    reason: 'Manual revocation',
+    metadata: { scope: rows[0].scope, clinician_id: rows[0].clinician_id }
+  })
+
+  res.json({ success: true })
+})
+
 // Who has used this patient's record: for the patient only (their own record).
 // Built from the audit log. Clinicians are named; administrators appear by role
 // only. The patient's own record views are left out as noise.

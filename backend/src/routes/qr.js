@@ -84,6 +84,77 @@ router.post(
   },
 )
 
+router.post(
+  '/emergency-access',
+  authenticateToken(),
+  requireRole('CLINICIAN', { resource: 'EMERGENCY_ACCESS' }),
+  scanLimiter,
+  async (req, res) => {
+    const raw = req.body?.qrToken
+    if (typeof raw !== 'string' || raw.trim().length < 8 || raw.trim().length > 256) {
+      throw badRequest('"qrToken" must be the text encoded in the patient QR card.')
+    }
+    const qrToken = raw.trim()
+
+    const { rows } = await query(
+      `SELECT q.id, q.patient_id, q.status, q.expires_at, q.token_hint
+         FROM clinical.patient_qr_identities q
+         JOIN clinical.patients p ON p.id = q.patient_id AND p.is_active
+        WHERE q.token_hash = $1`,
+      [hashQrToken(qrToken)],
+    )
+    const card = rows[0]
+    
+    if (!card || card.status === 'REVOKED' || (card.expires_at && new Date(card.expires_at) <= new Date())) {
+      throw new HttpError(404, 'QR_NOT_RECOGNISED', 'Invalid, expired or revoked QR card.')
+    }
+
+    const body = req.body ?? {}
+    const details = []
+    if (!body.reason || typeof body.reason !== 'string' || body.reason.trim().length < 5) {
+      details.push({ field: 'reason', message: 'must provide a valid emergency reason (at least 5 characters).' })
+    }
+    const SCOPES = ['FULL_RECORD', 'VISIT_HISTORY', 'SUMMARY_ONLY']
+    if (!SCOPES.includes(body.scope)) {
+      details.push({ field: 'scope', message: `must be one of ${SCOPES.join(', ')}.` })
+    }
+    if (!Number.isInteger(body.durationHours) || body.durationHours < 1 || body.durationHours > 24) {
+      details.push({ field: 'durationHours', message: 'must be between 1 and 24 hours.' })
+    }
+    if (details.length > 0) {
+      throw new HttpError(400, 'BAD_REQUEST', 'Validation failed.', { body: { error: 'VALIDATION_FAILED', details } })
+    }
+
+    const { rows: clinRows } = await query('SELECT id FROM clinical.clinicians WHERE user_id = $1 AND is_active', [req.user.id])
+    if (!clinRows[0]) throw new HttpError(403, 'FORBIDDEN', 'No active clinician profile.')
+    const clinicianId = clinRows[0].id
+
+    const patientId = card.patient_id
+
+    const { rows: eRows } = await query(
+      `INSERT INTO clinical.emergency_access_records 
+        (patient_id, clinician_id, scope, reason, expires_at, recorded_by)
+       VALUES ($1, $2, $3, $4, now() + interval '1 hour' * $5, $6)
+       RETURNING id, scope, expires_at`,
+      [patientId, clinicianId, body.scope, body.reason.trim(), body.durationHours, req.user.id]
+    )
+
+    await recordAuditEvent({
+      req,
+      user: req.user,
+      action: 'EMERGENCY_ACCESS_GRANT',
+      resourceType: 'emergency_access',
+      resourceId: eRows[0].id,
+      patientId,
+      outcome: 'SUCCESS',
+      reason: `Break-glass emergency access for ${body.reason}`,
+      metadata: { scope: body.scope, duration_hours: body.durationHours, clinician_id: clinicianId }
+    })
+
+    res.status(201).json({ patientId, emergencyAccess: eRows[0] })
+  }
+)
+
 // GET /api/qr/my-card  (PATIENT) → the state of the patient's own card, without the token.
 router.get('/my-card', authenticateToken(), requireRole('PATIENT', { resource: 'OWN_QR_CARD' }), async (req, res) => {
   const { rows } = await query(

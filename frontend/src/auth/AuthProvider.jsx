@@ -33,6 +33,14 @@ export function AuthProvider({ children }) {
     return next.user
   }, [])
 
+  const register = useCallback(async (body) => {
+    const data = await apiRequest('/api/auth/register', { method: 'POST', body })
+    const next = { token: data.token, user: data.user, expiresAt: data.expiresAt }
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    setSession(next)
+    return next.user
+  }, [])
+
   // Authenticated request. A 401 means the token is no longer valid: sign out.
   const request = useCallback(
     async (path, options = {}) => {
@@ -54,8 +62,8 @@ export function AuthProvider({ children }) {
   }, [session, logout])
 
   const value = useMemo(
-    () => ({ user: session?.user ?? null, isAuthenticated: Boolean(session), login, logout, request }),
-    [session, login, logout, request],
+    () => ({ user: session?.user ?? null, isAuthenticated: Boolean(session), login, register, logout, request }),
+    [session, login, register, logout, request],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
