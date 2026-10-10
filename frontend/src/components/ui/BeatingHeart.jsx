@@ -11,7 +11,7 @@ export function BeatingHeart({ className = "absolute inset-0 pointer-events-none
     
     // Camera
     const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
-    camera.position.z = 35;
+    camera.position.z = 45;
 
     // Renderer
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' });
@@ -39,33 +39,50 @@ export function BeatingHeart({ className = "absolute inset-0 pointer-events-none
     const centerOffsetY = -0.5 * ( geometry.boundingBox.max.y - geometry.boundingBox.min.y );
     geometry.translate( centerOffset, centerOffsetY, 0 );
 
-    const material = new THREE.MeshPhysicalMaterial({
-      color: 0xec4899,       // Pink/Red color
-      emissive: 0xbe123c,
-      emissiveIntensity: 0.4,
-      transparent: true,
-      opacity: 0.85,
-      roughness: 0.1,
-      metalness: 0.1,
-      transmission: 0.9,     // Glass-like
-      thickness: 1.5
-    });
+    const group = new THREE.Group();
 
-    const heart = new THREE.Mesh(geometry, material);
+    // 1. Glowing Inner Core
+    const coreMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xff0055,
+      emissive: 0x9f1239,
+      emissiveIntensity: 0.8,
+      roughness: 0.2,
+      metalness: 0.1
+    });
+    const core = new THREE.Mesh(geometry, coreMaterial);
+    core.scale.set(0.85, 0.85, 0.85); // Slightly smaller inside
+    group.add(core);
+
+    // 2. Crystal Glass Shell
+    const shellMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transmission: 0.95, // Glass effect
+      opacity: 1,
+      metalness: 0.2,
+      roughness: 0.05,
+      ior: 1.5,
+      thickness: 2.0,
+      specularIntensity: 1.0,
+      clearcoat: 1.0,
+      transparent: true
+    });
+    const shell = new THREE.Mesh(geometry, shellMaterial);
+    group.add(shell);
+
     // The shape is drawn upside down, flip it
-    heart.rotation.x = Math.PI;
-    scene.add(heart);
+    group.rotation.x = Math.PI;
+    scene.add(group);
 
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
     
-    const pointLight = new THREE.PointLight(0xffffff, 2, 100);
-    pointLight.position.set(0, 10, 20);
+    const pointLight = new THREE.PointLight(0xffffff, 4, 100);
+    pointLight.position.set(10, 20, 30);
     scene.add(pointLight);
 
-    const backLight = new THREE.PointLight(0xf43f5e, 2, 100);
-    backLight.position.set(0, -10, -20);
+    const backLight = new THREE.PointLight(0xf43f5e, 5, 100);
+    backLight.position.set(-10, -20, -30);
     scene.add(backLight);
 
     // Mouse tracking
@@ -95,19 +112,19 @@ export function BeatingHeart({ className = "absolute inset-0 pointer-events-none
       // A typical heartbeat has a quick double pulse. 
       // Math.pow(Math.sin(time), 4) creates sharp peaks.
       const pulse = 1 + Math.pow(Math.sin(time * 1.5), 16) * 0.15;
-      heart.scale.set(pulse, pulse, pulse);
+      group.scale.set(pulse, pulse, pulse);
 
       // Constant slow rotation
-      heart.rotation.y += 0.005;
+      group.rotation.y += 0.005;
 
       // Mouse tracking rotation (spring physics)
       targetRotationY = mouseX * 0.6;
       targetRotationX = Math.PI + (mouseY * 0.4);
 
       // Smooth interpolation for mouse look
-      heart.rotation.y += (targetRotationY - (heart.rotation.y % (Math.PI * 2))) * 0.05;
+      group.rotation.y += (targetRotationY - (group.rotation.y % (Math.PI * 2))) * 0.05;
       // Keep x rotation around PI
-      heart.rotation.x += (targetRotationX - heart.rotation.x) * 0.05;
+      group.rotation.x += (targetRotationX - group.rotation.x) * 0.05;
 
       renderer.render(scene, camera);
     };
@@ -132,7 +149,8 @@ export function BeatingHeart({ className = "absolute inset-0 pointer-events-none
         mountRef.current.removeChild(renderer.domElement);
       }
       geometry.dispose();
-      material.dispose();
+      coreMaterial.dispose();
+      shellMaterial.dispose();
       renderer.dispose();
     };
   }, []);
