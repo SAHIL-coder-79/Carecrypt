@@ -21,8 +21,8 @@ function ThreeScene() {
     const host = containerRef.current
     if (!canvas || !host) return
 
-    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
-    const small = matchMedia('(max-width:860px)').matches
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const small = window.matchMedia('(max-width:860px)').matches
 
     let renderer
     try {
@@ -148,8 +148,8 @@ function ThreeScene() {
     qr.rotation.set(0.1, -0.5, -0.12)
     root.add(qr)
 
-    const rings = []
-    ;[{ r: 2.7, rx: 1.25, rz: 0.35, sp: 0.18, n: 3 }, { r: 3.25, rx: 0.95, rz: -0.7, sp: -0.12, n: 2 }].forEach(o => {
+    const rings = [];
+    [{ r: 2.7, rx: 1.25, rz: 0.35, sp: 0.18, n: 3 }, { r: 3.25, rx: 0.95, rz: -0.7, sp: -0.12, n: 2 }].forEach(o => {
       const g = new THREE.Group()
       g.rotation.set(o.rx, 0, o.rz)
       g.add(new THREE.Mesh(keep(new THREE.TorusGeometry(o.r, 0.012, 6, 140)), keep(new THREE.MeshBasicMaterial({ color: BLUSH, transparent: true, opacity: 0.4 }))))
