@@ -19,7 +19,7 @@ const DURATIONS = [
   [365, '1 year'],
   ['', 'Until I revoke it'],
 ]
-const PURPOSES = ['Ongoing treatment', 'Second opinion', 'Specialist referral', 'Follow-up after hospital visit', 'Emergency care']
+const PURPOSES = ['Regular checkup', 'Ongoing treatment', 'Second opinion', 'Specialist referral', 'Follow-up after hospital visit', 'Emergency care']
 const STATUS_TONE = { ACTIVE: 'green', EXPIRED: 'neutral', REVOKED: 'red', PENDING: 'amber' }
 
 const input =
@@ -213,6 +213,7 @@ function GrantForm({ clinicians, active, onGranted }) {
   const { request } = useAuth()
   const [clinicianId, setClinicianId] = useState('')
   const [purpose, setPurpose] = useState('')
+  const [customPurpose, setCustomPurpose] = useState(false)
   const [scope, setScope] = useState('VISIT_HISTORY')
   const [duration, setDuration] = useState('30')
   const [busy, setBusy] = useState(false)
@@ -293,20 +294,37 @@ function GrantForm({ clinicians, active, onGranted }) {
           <label htmlFor="consent-purpose" className="mb-1 block text-xs font-medium text-slate-600">
             Purpose
           </label>
-          <input
+          <select
             id="consent-purpose"
             className={input}
-            list="consent-purposes"
-            maxLength={200}
-            value={purpose}
-            onChange={(e) => setPurpose(e.target.value)}
-            placeholder="Why this clinician needs access"
-          />
-          <datalist id="consent-purposes">
+            value={customPurpose ? 'Other' : purpose}
+            onChange={(e) => {
+              if (e.target.value === 'Other') {
+                setCustomPurpose(true)
+                setPurpose('')
+              } else {
+                setCustomPurpose(false)
+                setPurpose(e.target.value)
+              }
+            }}
+          >
+            <option value="" disabled>Select a purpose…</option>
             {PURPOSES.map((p) => (
-              <option key={p} value={p} />
+              <option key={p} value={p}>{p}</option>
             ))}
-          </datalist>
+            <option value="Other">Other (specify below)</option>
+          </select>
+          {customPurpose && (
+            <input
+              type="text"
+              className={`mt-2 ${input}`}
+              maxLength={200}
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
+              placeholder="Why this clinician needs access"
+              autoFocus
+            />
+          )}
         </div>
 
         <fieldset>

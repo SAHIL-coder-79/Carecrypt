@@ -108,9 +108,22 @@
               <p>
                 Patient: <span className="font-medium">{user.displayName}</span>
               </p>
-              <p>
-                Record number: <span className="font-mono font-medium">{issued.body.mrn}</span>
-              </p>
+              <div className="flex items-center gap-2">
+                <span>Record number: <span className="font-mono font-medium">{issued.body.mrn}</span></span>
+                <button 
+                  onClick={(e) => {
+                    navigator.clipboard.writeText(issued.body.mrn)
+                    const btn = e.currentTarget
+                    const oldText = btn.innerText
+                    btn.innerText = 'Copied!'
+                    setTimeout(() => btn.innerText = oldText, 2000)
+                  }} 
+                  className="text-xs bg-slate-200/50 hover:bg-slate-300/80 text-slate-700 px-2 py-0.5 rounded transition-colors border border-slate-300/50"
+                  title="Copy Patient Code"
+                >
+                  Copy
+                </button>
+              </div>
               <p className="text-slate-600">{issued.body.note}</p>
               <p className="text-xs text-slate-500">
                 If a clinician&apos;s camera cannot read it, they can type the code:

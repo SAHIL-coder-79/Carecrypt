@@ -35,10 +35,7 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (body) => {
     const data = await apiRequest('/api/auth/register', { method: 'POST', body })
-    const next = { token: data.token, user: data.user, expiresAt: data.expiresAt }
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-    setSession(next)
-    return next.user
+    return data.user
   }, [])
 
   // Authenticated request. A 401 means the token is no longer valid: sign out.

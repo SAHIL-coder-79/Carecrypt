@@ -414,6 +414,12 @@ export default function LoginPage() {
               <h2>Sign in</h2>
               <p className="sub">Use the email and password for your CareCrypt account.</p>
 
+              {location.state?.successMessage && (
+                <div style={{ backgroundColor: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', fontWeight: '500' }}>
+                  ✓ {location.state.successMessage}
+                </div>
+              )}
+
               <form onSubmit={onSubmit} noValidate>
                 <div className="f">
                   <label htmlFor="email">Email</label>

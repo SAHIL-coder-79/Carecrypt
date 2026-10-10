@@ -41,7 +41,7 @@ export default function RegisterPage() {
     setSubmitting(true)
     try {
       await register({ firstName, lastName, role, email, password })
-      navigate(location.state?.from ?? '/', { replace: true })
+      navigate('/login', { replace: true, state: { successMessage: 'Registration successful! Please sign in.' } })
     } catch (err) {
       setError(err.message)
       setSubmitting(false)
