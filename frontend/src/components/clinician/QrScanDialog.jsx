@@ -92,7 +92,14 @@ export function ScanPanel({ onClose = () => {} }) {
             </button>
           )}
           {status.code === 'NO_ACTIVE_CONSENT' && status.qrToken && (
-            <div className="mt-3">
+            <div className="mt-3 flex gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setStatus({ ...status, showConsentRequest: true })}
+                className="rounded bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-teal-500"
+              >
+                Request Standard Consent
+              </button>
               <button
                 type="button"
                 onClick={() => setStatus({ ...status, showEmergency: true })}
@@ -105,6 +112,16 @@ export function ScanPanel({ onClose = () => {} }) {
         </div>
       )}
 
+      {status.showConsentRequest && (
+        <QrConsentRequestForm
+          qrToken={status.qrToken}
+          onClose={() => setStatus({ state: 'idle' })}
+          onSuccess={() => {
+            setStatus({ state: 'error', message: 'Request sent successfully! Waiting for patient approval.', httpStatus: 200 })
+          }}
+        />
+      )}
+
       {status.showEmergency && (
         <EmergencyAccessDialog 
           open={true} 
@@ -113,6 +130,81 @@ export function ScanPanel({ onClose = () => {} }) {
         />
       )}
     </div>
+  )
+}
+
+function QrConsentRequestForm({ qrToken, onClose, onSuccess }) {
+  const { request } = useAuth()
+  const [scope, setScope] = useState('VISIT_HISTORY')
+  const [duration, setDuration] = useState('30')
+  const [reason, setReason] = useState('')
+  const [urgency, setUrgency] = useState('ROUTINE')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+
+  const SCOPES = [
+    { id: 'FULL_RECORD', label: 'Full Record' },
+    { id: 'VISIT_HISTORY', label: 'Visit History' },
+    { id: 'SUMMARY_ONLY', label: 'Summary Only' },
+  ]
+  const DURATIONS = [[7, '7 days'], [30, '30 days'], [90, '3 months'], [365, '1 year']]
+
+  async function submit(e) {
+    e.preventDefault()
+    setBusy(true)
+    setError(null)
+    try {
+      const finalReason = urgency === 'URGENT' ? `[URGENT] ${reason}` : reason
+      await request('/api/clinicians/consent-requests', {
+        method: 'POST',
+        body: { qrToken, scope, durationDays: Number(duration), reason: finalReason }
+      })
+      onSuccess()
+    } catch (err) {
+      setError(err)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="mt-4 space-y-4 rounded-md border border-slate-200 bg-slate-50 p-4">
+      <h3 className="font-semibold text-slate-800">Request Consent via QR</h3>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Access Scope</label>
+          <select value={scope} onChange={e => setScope(e.target.value)} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+            {SCOPES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Duration</label>
+          <select value={duration} onChange={e => setDuration(e.target.value)} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+            {DURATIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Urgency</label>
+          <select value={urgency} onChange={e => setUrgency(e.target.value)} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+            <option value="ROUTINE">Routine</option>
+            <option value="URGENT">Urgent</option>
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Reason</label>
+          <input required minLength={3} maxLength={200} value={reason} onChange={e => setReason(e.target.value)} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Why you need access" />
+        </div>
+      </div>
+      {error && <div className="text-sm text-red-600">{error.message}</div>}
+      <div className="flex justify-end gap-2 pt-2">
+        <button type="button" onClick={onClose} className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-100">Cancel</button>
+        <button type="submit" disabled={busy || reason.trim().length < 3} className="rounded-md bg-teal-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-teal-800 disabled:opacity-50">
+          {busy ? 'Sending...' : 'Send Request'}
+        </button>
+      </div>
+    </form>
   )
 }
 

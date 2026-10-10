@@ -7,6 +7,7 @@ import { authenticateToken } from '../middleware/authenticate.js'
 import { requireRole } from '../middleware/requireRole.js'
 import * as requests from '../consent/requestRepository.js'
 import * as consents from '../consent/repository.js'
+import { hashQrToken } from '../qr/tokens.js'
 
 const router = Router()
 
@@ -146,12 +147,15 @@ router.get('/me/visits', authenticateToken(), requireRole('CLINICIAN', { resourc
 })
 
 // POST /api/clinicians/consent-requests
-// A clinician requests access to a patient record by providing the patient's MRN.
+// A clinician requests access to a patient record by providing the patient's MRN or QR token.
 router.post('/consent-requests', authenticateToken(), requireRole('CLINICIAN', { resource: 'CONSENT' }), async (req, res) => {
-  const { mrn, scope, reason, durationDays } = req.body ?? {}
+  const { mrn, qrToken, scope, reason, durationDays } = req.body ?? {}
 
-  if (typeof mrn !== 'string' || mrn.trim().length === 0) {
-    throw new HttpError(400, 'BAD_REQUEST', 'Patient MRN is required.')
+  const hasMrn = typeof mrn === 'string' && mrn.trim().length > 0
+  const hasQrToken = typeof qrToken === 'string' && qrToken.trim().length > 0
+
+  if (!hasMrn && !hasQrToken) {
+    throw new HttpError(400, 'BAD_REQUEST', 'Patient MRN or QR token is required.')
   }
   if (!['FULL_RECORD', 'VISIT_HISTORY', 'SUMMARY_ONLY'].includes(scope)) {
     throw new HttpError(400, 'BAD_REQUEST', 'Invalid scope.')
@@ -164,19 +168,32 @@ router.post('/consent-requests', authenticateToken(), requireRole('CLINICIAN', {
   const clinicianId = await consents.findOwnClinicianId(req.user.id)
   if (!clinicianId) throw new HttpError(403, 'FORBIDDEN', 'No active clinician profile.')
 
-  // Look up the patient by MRN
-  const { rows } = await query('SELECT id FROM clinical.patients WHERE UPPER(mrn) = UPPER($1) AND is_active', [mrn.trim()])
-  if (rows.length === 0) {
-    // Audit log for failure to find patient
-    await recordAuditEvent({
-      req, user: req.user, action: 'CONSENT_REQUEST', resourceType: 'consent_request',
-      outcome: 'FAILURE', reason: 'PATIENT_NOT_FOUND', metadata: { mrn }
-    })
-    // For privacy, we just say request sent or invalid MRN without revealing if it exists
-    throw new HttpError(404, 'NOT_FOUND', 'Patient MRN not found.')
+  // Look up the patient by MRN or QR Token
+  let patientId = null
+  if (hasQrToken) {
+    const { rows } = await query(
+      `SELECT q.patient_id, q.status, q.expires_at 
+         FROM clinical.patient_qr_identities q
+         JOIN clinical.patients p ON p.id = q.patient_id AND p.is_active
+        WHERE q.token_hash = $1`,
+      [hashQrToken(qrToken.trim())],
+    )
+    const card = rows[0]
+    if (!card || card.status === 'REVOKED' || (card.expires_at && new Date(card.expires_at) <= new Date())) {
+      throw new HttpError(404, 'QR_NOT_RECOGNISED', 'Invalid, expired or revoked QR card.')
+    }
+    patientId = card.patient_id
+  } else {
+    const { rows } = await query('SELECT id FROM clinical.patients WHERE UPPER(mrn) = UPPER($1) AND is_active', [mrn.trim()])
+    if (rows.length === 0) {
+      await recordAuditEvent({
+        req, user: req.user, action: 'CONSENT_REQUEST', resourceType: 'consent_request',
+        outcome: 'FAILURE', reason: 'PATIENT_NOT_FOUND', metadata: { mrn }
+      })
+      throw new HttpError(404, 'NOT_FOUND', 'Patient MRN not found.')
+    }
+    patientId = rows[0].id
   }
-  
-  const patientId = rows[0].id
 
   // Check if there is already an active consent
   const { rows: consentRows } = await query(
