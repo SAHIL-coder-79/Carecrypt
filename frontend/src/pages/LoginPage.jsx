@@ -65,7 +65,7 @@ function ThreeScene() {
     
     const shG = keep(new THREE.ExtrudeGeometry(sh, { depth: 0.22, bevelEnabled: true, bevelThickness: 0.07, bevelSize: 0.07, bevelSegments: 3, curveSegments: 14 }))
     shG.center()
-    const shM = keep(new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.75, roughness: 0.1, metalness: 0.2, clearcoat: 1, clearcoatRoughness: 0.1, side: THREE.DoubleSide }))
+    const shM = keep(new THREE.MeshPhysicalMaterial({ color: STEEL_L, transparent: true, opacity: 0.62, roughness: 0.15, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.1, side: THREE.DoubleSide }))
     const shield = new THREE.Mesh(shG, shM)
     shield.scale.setScalar(1.25)
     root.add(shield)
@@ -263,15 +263,15 @@ function ThreeScene() {
 
   return (
     <div className="scene" aria-hidden="true" ref={containerRef}>
-      <svg className="nodes" width="150" height="110" viewBox="0 0 150 110" fill="none" stroke="#34495E" strokeWidth="1">
+      <svg className="nodes" width="150" height="110" viewBox="0 0 150 110" fill="none" stroke="#E6A7B8" strokeWidth="1">
         <path d="M10 80L50 40L90 60L140 15M50 40L60 95M90 60L130 90"/>
-        <g fill="#34495E">
+        <g fill="#E6A7B8">
           <circle cx="10" cy="80" r="3"/><circle cx="50" cy="40" r="3.5"/><circle cx="90" cy="60" r="3"/>
           <circle cx="140" cy="15" r="3"/><circle cx="60" cy="95" r="2.5"/><circle cx="130" cy="90" r="2.5"/>
         </g>
       </svg>
       <svg className="ecg" viewBox="0 0 800 60" preserveAspectRatio="none" height="50" fill="none">
-        <path d="M0 32H260l12-22 18 46 16-34 10 10H800" stroke="#34495E" strokeWidth="1.4" vectorEffect="non-scaling-stroke"/>
+        <path d="M0 32H260l12-22 18 46 16-34 10 10H800" stroke="#E6A7B8" strokeWidth="1.4" vectorEffect="non-scaling-stroke"/>
       </svg>
       <canvas id="gl" ref={canvasRef}></canvas>
       <div className="fallback">
@@ -355,7 +355,7 @@ export default function LoginPage() {
       <section className="stage" aria-label="CareCrypt">
         <div className="logo">
           <i>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34495E" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11z"/>
               <path d="M6 12h3l1.5-3 3 6 1.5-3h3"/>
             </svg>
