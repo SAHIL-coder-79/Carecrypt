@@ -297,6 +297,7 @@ CREATE TRIGGER patient_allergies_set_updated_at BEFORE UPDATE ON clinical.patien
 
 CREATE TYPE clinical.visit_type AS ENUM ('OPD', 'FOLLOW_UP', 'EMERGENCY', 'TELECONSULT');
 CREATE TYPE clinical.visit_status AS ENUM ('OPEN', 'COMPLETED', 'CANCELLED');
+CREATE TYPE clinical.consent_scope AS ENUM ('FULL_RECORD', 'VISIT_HISTORY', 'SUMMARY_ONLY');
 
 CREATE TABLE clinical.emergency_access_records (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -421,7 +422,6 @@ CREATE INDEX visit_medications_medication_idx ON clinical.visit_medications (med
 -- an optional expiry. A consent is in force when it is not revoked and not expired.
 -- -----------------------------------------------------------------------------
 
-CREATE TYPE clinical.consent_scope AS ENUM ('FULL_RECORD', 'VISIT_HISTORY', 'SUMMARY_ONLY');
 CREATE TYPE clinical.consent_channel AS ENUM ('IN_PERSON', 'PATIENT_PORTAL');
 
 CREATE TABLE clinical.consent_records (
