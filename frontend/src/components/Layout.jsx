@@ -4,7 +4,7 @@ import { useAuth } from '../auth/context.js'
 import { ROLE_LABEL } from '../lib/format.js'
 import { navigationFor } from '../lib/navigation.js'
 import { CloseIcon, HeartPulseIcon, LogOutIcon, MenuIcon } from './icons.jsx'
-import { BeatingHeart } from './ui/BeatingHeart.jsx'
+import { MedicalCross } from './ui/MedicalCross.jsx'
 import { DnaHelix } from './ui/DnaHelix.jsx'
 
 const ROLE_TONE = {
@@ -177,9 +177,9 @@ function Sidebar({ onClose }) {
         {/* The 3D Element fills the remaining space in the sidebar */}
         <div className="relative flex-1 mt-6 mx-2 mb-4 rounded-xl border border-slate-200 bg-slate-900/5 shadow-inner overflow-hidden flex flex-col items-center justify-end pb-4">
           {user?.role === 'PATIENT' ? (
-            <BeatingHeart className="absolute inset-0 opacity-80 pointer-events-auto" />
+            <DnaHelix className="absolute inset-0 opacity-80 pointer-events-auto" />
           ) : (
-            <DnaHelix className="absolute inset-0 opacity-40 pointer-events-auto" />
+            <MedicalCross className="absolute inset-0 opacity-80 pointer-events-auto" />
           )}
           <p className="relative z-10 text-[10px] font-semibold tracking-widest text-slate-400 uppercase">CareCrypt Core</p>
         </div>
