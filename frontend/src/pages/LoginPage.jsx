@@ -33,7 +33,7 @@ function ThreeScene() {
     }
 
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75))
-    renderer.outputEncoding = THREE.sRGBEncoding
+    renderer.outputColorSpace = THREE.SRGBColorSpace
 
     const scene = new THREE.Scene()
     const cam = new THREE.PerspectiveCamera(38, 1, 0.1, 50)
