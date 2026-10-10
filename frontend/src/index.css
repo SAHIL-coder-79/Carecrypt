@@ -30,3 +30,13 @@
   --color-slate-800: var(--steel-blue);
   --color-slate-900: var(--deep-slate);
 }
+
+body {
+  background-color: #f8fafc;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(340, 50%, 90%, 1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(210, 40%, 90%, 1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(340, 50%, 90%, 1) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(210, 40%, 90%, 1) 0px, transparent 50%);
+  background-attachment: fixed;
+}

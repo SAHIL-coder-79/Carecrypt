@@ -83,7 +83,7 @@ export function PageHeader({ eyebrow, title, description, actions, back, childre
 export function Card({ title, subtitle, action, children, className = '', bodyClassName = 'p-4 sm:p-5' }) {
   return (
     // min-w-0 lets a card in a grid shrink, so wide tables scroll inside it instead of widening the page.
-    <section className={`min-w-0 rounded-xl border border-slate-200 bg-white shadow-sm ${className}`}>
+    <section className={`min-w-0 rounded-2xl border border-white/40 bg-white/50 backdrop-blur-xl shadow-lg ring-1 ring-black/5 ${className}`}>
       {(title || action) && (
         <header className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 px-4 py-3 sm:px-5">
           <div className="min-w-0">
@@ -109,7 +109,7 @@ const STAT_TONES = {
 // A single headline number.
 export function StatTile({ label, value, detail, tone = 'neutral', icon: Icon }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
+    <div className="rounded-2xl border border-white/40 bg-white/50 backdrop-blur-xl px-4 py-3.5 shadow-lg ring-1 ring-black/5">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-medium text-slate-500">{label}</p>
         {Icon && <Icon className="h-4 w-4 text-slate-400" />}
@@ -205,7 +205,7 @@ export function DataTable({ columns, rows, rowKey, caption, empty = 'Nothing to 
       <table className="w-full text-left text-sm" style={{ minWidth }}>
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead>
-          <tr className="border-b border-slate-200 bg-slate-50/80">
+          <tr className="border-b border-white/40 bg-white/30 backdrop-blur-md">
             {columns.map((c) => (
               <th
                 key={c.key}
@@ -226,7 +226,7 @@ export function DataTable({ columns, rows, rowKey, caption, empty = 'Nothing to 
             </tr>
           ) : (
             rows.map((row) => (
-              <tr key={rowKey(row)} className="align-top hover:bg-slate-50/70">
+              <tr key={rowKey(row)} className="align-top hover:bg-white/60 transition-colors">
                 {columns.map((c) => (
                   <td key={c.key} className={`${pad} ${c.align === 'right' ? 'text-right tabular-nums' : ''} ${c.className ?? ''}`}>
                     {c.render(row)}
