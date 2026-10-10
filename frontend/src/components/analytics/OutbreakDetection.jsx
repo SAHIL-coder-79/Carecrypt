@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import * as THREE from 'three'
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Scatter, Tooltip, XAxis, YAxis } from 'recharts'
 import { useAuth } from '../../auth/context.js'
 import { monthLabel } from '../../lib/analytics.js'
@@ -123,12 +124,13 @@ export default function OutbreakDetection({ districts, categories, k }) {
             {isSynthetic && <span className="rounded-full bg-orange-100 px-2 py-0.5 font-medium text-orange-800">Synthetic Fallback Data</span>}
           </div>
 
-          <div className="h-72 w-full rounded-md border border-slate-100 bg-white pt-4 pr-4">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="relative h-72 w-full rounded-md border border-slate-800 bg-slate-900 pt-4 pr-4 shadow-inner overflow-hidden">
+            <HolographicMap hasAlerts={hasAlerts} />
+            <ResponsiveContainer width="100%" height="100%" className="relative z-10">
               <ComposedChart data={data.results}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="month" tickFormatter={(m) => monthLabel(m)} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
+                <XAxis dataKey="month" tickFormatter={(m) => monthLabel(m)} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Area type="monotone" dataKey="expectedBaseline" name="Expected Baseline" fill="#e0f2fe" stroke="#38bdf8" strokeWidth={2} fillOpacity={0.5} connectNulls={false} isAnimationActive={false} />
                 <Area type="monotone" dataKey="caseCount" name="Actual Cases" fill="#fee2e2" stroke="#ef4444" strokeWidth={2} fillOpacity={0.5} dot={{ r: 3, fill: '#ef4444', strokeWidth: 2, stroke: '#ffffff' }} connectNulls={false} isAnimationActive={false} />
@@ -157,4 +159,100 @@ export default function OutbreakDetection({ districts, categories, k }) {
       ) : null}
     </Card>
   )
+}
+
+function HolographicMap({ hasAlerts }) {
+  const mountRef = useRef(null)
+
+  useEffect(() => {
+    const w = mountRef.current.clientWidth
+    const h = mountRef.current.clientHeight
+    const scene = new THREE.Scene()
+    const camera = new THREE.PerspectiveCamera(45, w/h, 0.1, 1000)
+    camera.position.z = 20
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
+    renderer.setSize(w, h)
+    mountRef.current.appendChild(renderer.domElement)
+
+    const count = 200
+    const positions = new Float32Array(count * 3)
+    const colors = new Float32Array(count * 3)
+    
+    const baseColor = new THREE.Color('#38bdf8') 
+    const alertColor = new THREE.Color('#ef4444') 
+
+    for(let i=0; i<count*3; i+=3) {
+      positions[i] = (Math.random() - 0.5) * 40
+      positions[i+1] = (Math.random() - 0.5) * 20
+      positions[i+2] = (Math.random() - 0.5) * 10
+
+      if (hasAlerts && Math.random() > 0.85) {
+        colors[i] = alertColor.r; colors[i+1] = alertColor.g; colors[i+2] = alertColor.b
+      } else {
+        colors[i] = baseColor.r; colors[i+1] = baseColor.g; colors[i+2] = baseColor.b
+      }
+    }
+
+    const geometry = new THREE.BufferGeometry()
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+
+    const material = new THREE.PointsMaterial({
+      size: 0.15,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.6
+    })
+
+    const particles = new THREE.Points(geometry, material)
+    scene.add(particles)
+
+    const lineMat = new THREE.LineBasicMaterial({ 
+      color: hasAlerts ? '#ef4444' : '#38bdf8', 
+      transparent: true, 
+      opacity: hasAlerts ? 0.2 : 0.05 
+    })
+    const lines = new THREE.LineSegments(geometry, lineMat)
+    scene.add(lines)
+
+    let req
+    const animate = () => {
+      req = requestAnimationFrame(animate)
+      particles.rotation.y += 0.001
+      particles.rotation.x += 0.0005
+      lines.rotation.y += 0.001
+      lines.rotation.x += 0.0005
+      
+      if (hasAlerts) {
+        material.size = 0.15 + Math.sin(Date.now() * 0.005) * 0.05
+      }
+      
+      renderer.render(scene, camera)
+    }
+    animate()
+
+    const onResize = () => {
+      const rw = mountRef.current.clientWidth
+      const rh = mountRef.current.clientHeight
+      renderer.setSize(rw, rh)
+      camera.aspect = rw/rh
+      camera.updateProjectionMatrix()
+    }
+    window.addEventListener('resize', onResize)
+
+    return () => {
+      window.removeEventListener('resize', onResize)
+      cancelAnimationFrame(req)
+      if (mountRef.current && mountRef.current.contains(renderer.domElement)) {
+        mountRef.current.removeChild(renderer.domElement)
+      }
+      geometry.dispose()
+      material.dispose()
+      lineMat.dispose()
+      renderer.dispose()
+    }
+  }, [hasAlerts])
+
+  return <div ref={mountRef} className="absolute inset-0 pointer-events-none opacity-60 mix-blend-screen" />
 }
