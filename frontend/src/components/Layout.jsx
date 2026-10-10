@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../auth/context.js'
 import { ROLE_LABEL } from '../lib/format.js'
@@ -25,6 +25,22 @@ export default function Layout() {
     setLastPath(location.pathname)
     if (menuOpen) setMenuOpen(false)
   }
+
+  // Dynamic Page Title
+  useEffect(() => {
+    let title = 'CareCrypt'
+    const path = location.pathname
+    
+    if (path.includes('patient/card')) title = 'My Card | CareCrypt'
+    else if (path.includes('patient/consent')) title = 'Access Requests | CareCrypt'
+    else if (path.includes('clinician/patients')) title = 'My Patients | CareCrypt'
+    else if (path.includes('clinician/smartcare')) title = 'SmartCare Workspace | CareCrypt'
+    else if (path.includes('clinician/dashboard')) title = 'Dashboard | CareCrypt'
+    else if (path.includes('admin/trends')) title = 'Disease Trends | CareCrypt'
+    else if (path.includes('security/dashboard')) title = 'Security Logs | CareCrypt'
+    
+    document.title = title
+  }, [location.pathname])
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">

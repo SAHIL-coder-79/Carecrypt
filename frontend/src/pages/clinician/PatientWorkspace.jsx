@@ -14,7 +14,6 @@ import {
 import { ArrowLeftIcon, PlusIcon, SparkIcon } from '../../components/icons.jsx'
 import ServerRefusal from '../../components/ServerRefusal.jsx'
 import { Alert, Badge, StatusBadge, Button, ButtonLink, Card, LoadingState, Withheld } from '../../components/ui.jsx'
-import { DnaHelix } from '../../components/ui/DnaHelix.jsx'
 import { formatDate, SCOPE, titleCase } from '../../lib/format.js'
 import { useApiData } from '../../lib/useApiData.js'
 
@@ -86,11 +85,9 @@ export default function PatientWorkspace() {
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)]">
-      <DnaHelix />
-      <div className="relative z-10 space-y-4 p-4 lg:p-6 bg-slate-50/70 backdrop-blur-sm min-h-full">
-        <BackLink />
-        <PatientHeader
+    <div className="space-y-4">
+      <BackLink />
+      <PatientHeader
         patient={patient}
         access={access}
         canAddVisit={canAddVisit}
@@ -158,7 +155,6 @@ export default function PatientWorkspace() {
           initial={prefill}
         />
       )}
-      </div>
     </div>
   )
 }
