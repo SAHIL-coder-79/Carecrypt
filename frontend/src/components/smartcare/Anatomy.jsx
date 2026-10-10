@@ -20,10 +20,13 @@ const REGIONS = [
 // focus: region to emphasise (hovered, selected, or picked from the table).
 export function BodyMap({ lang, activeRegions, focus, onHover, onSelect }) {
   return (
-    <div>
+    <div className="rounded-xl bg-slate-900/95 p-4 border border-slate-800 shadow-[inset_0_0_20px_rgba(56,189,248,0.05)] backdrop-blur-md relative overflow-hidden">
+      {/* Decorative scanning line effect */}
+      <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(56,189,248,0.1)_50%,transparent_100%)] h-full w-full animate-[scan_3s_ease-in-out_infinite] pointer-events-none opacity-50" />
+      
       <svg
         viewBox="0 0 200 450"
-        className="mx-auto block h-auto w-full max-w-[13rem]"
+        className="mx-auto block h-auto w-full max-w-[13rem] relative z-10"
         role="group"
         aria-label="Body map. Choose a region to see guidance and pick symptoms."
         onMouseLeave={() => onHover(null)}
@@ -40,10 +43,13 @@ export function BodyMap({ lang, activeRegions, focus, onHover, onSelect }) {
               tabIndex={0}
               aria-label={`${label}${active ? ' (has selected symptoms)' : ''}`}
               aria-pressed={focused}
-              className="cursor-pointer outline-none transition-colors focus-visible:stroke-[3]"
-              fill={active ? '#fecaca' : focused ? '#c7d2fe' : '#e2e8f0'}
-              stroke={active ? '#dc2626' : focused ? '#4f46e5' : '#cbd5e1'}
-              strokeWidth={active || focused ? 2 : 1.5}
+              className="cursor-pointer outline-none transition-all duration-300 focus-visible:stroke-[3]"
+              fill={active ? 'rgba(239, 68, 68, 0.25)' : focused ? 'rgba(56, 189, 248, 0.3)' : 'rgba(15, 23, 42, 0.4)'}
+              stroke={active ? '#ef4444' : focused ? '#38bdf8' : '#334155'}
+              strokeWidth={active || focused ? 2.5 : 1}
+              style={{
+                filter: active ? 'drop-shadow(0 0 8px rgba(239,68,68,0.8))' : focused ? 'drop-shadow(0 0 8px rgba(56,189,248,0.8))' : 'none'
+              }}
               onMouseEnter={() => onHover(id)}
               onFocus={() => onHover(id)}
               onClick={() => onSelect(id)}
@@ -56,23 +62,23 @@ export function BodyMap({ lang, activeRegions, focus, onHover, onSelect }) {
             />
           )
         })}
-        <text x="100" y="434" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#64748b" pointerEvents="none">
-          GEN
+        <text x="100" y="434" textAnchor="middle" fontSize="9" fontWeight="800" fill="#475569" pointerEvents="none" className="tracking-widest">
+          SYS
         </text>
       </svg>
-      <div className="mt-3 grid grid-cols-2 gap-1.5">
+      <div className="mt-4 grid grid-cols-2 gap-2 relative z-10">
         {['CRANIAL', 'THORACIC', 'ABDOMINAL', 'SYSTEMIC'].map((z) => (
-          <span key={z} className="rounded bg-slate-100 py-1 text-center text-[10px] font-bold tracking-wide text-slate-500">
+          <span key={z} className="rounded bg-slate-800/80 py-1.5 text-center text-[10px] font-bold tracking-widest text-slate-400 border border-slate-700/50">
             {z}
           </span>
         ))}
       </div>
-      <p className="mt-2 flex items-center justify-center gap-3 text-[11px] text-slate-500">
-        <span className="flex items-center gap-1">
-          <span className="h-2.5 w-2.5 rounded-sm border border-red-600 bg-red-200" /> Symptom selected
+      <p className="mt-3 flex items-center justify-center gap-4 text-[11px] text-slate-400 relative z-10 font-medium">
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]" /> Active
         </span>
-        <span className="flex items-center gap-1">
-          <span className="h-2.5 w-2.5 rounded-sm border border-indigo-600 bg-indigo-200" /> In focus
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.8)]" /> Scanned
         </span>
       </p>
     </div>

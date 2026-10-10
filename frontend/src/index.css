@@ -40,3 +40,8 @@ body {
     radial-gradient(at 0% 100%, hsla(210, 40%, 90%, 1) 0px, transparent 50%);
   background-attachment: fixed;
 }
+
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
