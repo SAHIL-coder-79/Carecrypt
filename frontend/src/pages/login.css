@@ -6,8 +6,10 @@
   --blush: #E6A7B8;
   --blush-p: #F4C8D4;
   --blush-l: #FFF4F6;
+  --baby-pink: #FDF0F4;
+  --baby-pink-border: #F3CAD6;
   --bg: #FFF4F6;
-  --card: #FFFFFF;
+  --card: #FDF0F4;
   --ink: #263442;
   --mute: #5a6a80;
   --line: #7f8ca0;
@@ -15,27 +17,17 @@
   --err: #b42318;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #1b2530;
-    --card: #222f3c;
-    --ink: #f1f4f8;
-    --mute: #b3bfce;
-    --line: #73849a;
-    --hair: #34495E;
-    --blush-l: rgba(230, 167, 184, 0.15);
-    --err: #ff8a7a;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #1b2530;
-  --card: #222f3c;
-  --ink: #f1f4f8;
-  --mute: #b3bfce;
-  --line: #73849a;
-  --hair: #34495E;
-  --blush-l: rgba(230, 167, 184, 0.15);
-  --err: #ff8a7a;
+/* Ensure the login page always keeps the intended split design: 
+   Left Stage is Dark Navy/Steel, Right Panel & Card is Light Baby Pink */
+.login-page {
+  --bg: #FFF4F6;
+  --card: #FDF0F4;
+  --card-body: #FFF5F8;
+  --ink: #263442;
+  --mute: #5a6a80;
+  --line: #d2dbe5;
+  --hair: #F3CAD6;
+  --blush-l: #FEEAF0;
 }
 
 .login-page {
@@ -218,10 +210,10 @@
 .card {
   position: relative;
   background: var(--card);
-  border: 1px solid var(--hair);
+  border: 1.5px solid var(--hair);
   border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(35, 55, 71, .06), 0 24px 56px rgba(35, 55, 71, .18);
+  box-shadow: 0 4px 20px rgba(230, 167, 184, 0.2), 0 20px 48px rgba(35, 55, 71, .14);
 }
 
 .ch {
@@ -266,6 +258,7 @@
 }
 
 .cb {
+  background: #FFF5F8;
   padding: 26px 32px 32px;
 }
 
@@ -273,6 +266,7 @@
   font-size: 28px;
   letter-spacing: -.02em;
   margin: 0 0 6px;
+  color: var(--ink);
 }
 
 .sub {
@@ -292,6 +286,7 @@
   font-weight: 600;
   font-size: 14px;
   margin-bottom: 6px;
+  color: var(--ink);
 }
 
 .in {
@@ -305,8 +300,8 @@
   font: inherit;
   font-size: 16px;
   color: var(--ink);
-  background: var(--card);
-  border: 1.5px solid var(--line);
+  background: #FFFFFF;
+  border: 1.5px solid #E2D3DA;
   border-radius: 10px;
   transition: border-color .15s, box-shadow .15s;
 }
@@ -317,7 +312,7 @@
 
 .f input:focus {
   border-color: var(--steel);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--steel) 22%, transparent);
+  box-shadow: 0 0 0 4px rgba(230, 167, 184, 0.35);
   outline: none;
 }
 
@@ -414,6 +409,7 @@
   font-size: 13.5px;
   color: var(--ink);
   background: var(--blush-l);
+  border: 1px solid var(--baby-pink-border);
   border-radius: 10px;
   padding: 10px 12px;
 }
