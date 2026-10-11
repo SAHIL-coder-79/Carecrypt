@@ -217,20 +217,29 @@ router.post('/consent-requests', authenticateToken(), requireRole('CLINICIAN', {
     throw new HttpError(409, 'CONFLICT', 'You already have a pending request for this patient.')
   }
 
-  const requestId = await requests.createRequest({
-    patientId,
-    clinicianId,
-    scope,
-    reason: cleanReason,
-    durationDays: typeof durationDays === 'number' ? durationDays : null
-  })
+  try {
+    const requestId = await requests.createRequest({
+      patientId,
+      clinicianId,
+      scope,
+      reason: cleanReason,
+      durationDays: typeof durationDays === 'number' ? durationDays : null
+    })
 
-  await recordAuditEvent({
-    req, user: req.user, action: 'CONSENT_REQUEST', resourceType: 'consent_request', resourceId: requestId,
-    patientId, outcome: 'SUCCESS', reason: cleanReason, metadata: { scope, durationDays }
-  })
+    await recordAuditEvent({
+      req, user: req.user, action: 'CONSENT_REQUEST', resourceType: 'consent_request', resourceId: requestId,
+      patientId, outcome: 'SUCCESS', reason: cleanReason, metadata: { scope, durationDays }
+    })
 
-  res.status(201).json({ id: requestId, message: 'Request sent successfully.' })
+    res.status(201).json({ id: requestId, message: 'Request sent successfully.' })
+  } catch (err) {
+    if (err instanceof HttpError) throw err
+    console.error('[consent-requests error]', err)
+    if (err.code === '23505') {
+      throw new HttpError(409, 'CONFLICT', 'You already have a pending consent request for this patient.')
+    }
+    throw new HttpError(400, 'REQUEST_FAILED', err.message || 'Failed to submit consent request.')
+  }
 })
 
 // GET /api/clinicians/consent-requests

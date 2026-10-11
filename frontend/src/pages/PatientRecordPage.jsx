@@ -13,6 +13,7 @@ import {
 import { CardIcon, HistoryIcon } from '../components/icons.jsx'
 import { Badge, ButtonLink, LoadingState } from '../components/ui.jsx'
 import { SCOPE, titleCase } from '../lib/format.js'
+import { PatientConsentRequests } from './patient/PatientConsentRequests.jsx'
 
 export default function PatientRecordPage() {
   const { patientId } = useParams()
@@ -48,6 +49,10 @@ export default function PatientRecordPage() {
     <div className="space-y-6">
       {user.role === 'CLINICIAN' && <BackLink />}
       <RecordHeader patient={patient} access={access} />
+
+      {access.via === 'SELF' && (
+        <PatientConsentRequests patientId={patient.id} onResolved={() => window.location.reload()} />
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">

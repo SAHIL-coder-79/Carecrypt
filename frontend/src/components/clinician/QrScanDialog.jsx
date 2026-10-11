@@ -76,36 +76,49 @@ export function ScanPanel({ onClose = () => {} }) {
       {mode === 'manual' && <ManualEntry onCode={resolve} busy={status.state === 'resolving'} />}
 
       {status.state === 'resolving' && <p className="text-sm text-slate-600">Checking card with the server…</p>}
+      
+      {status.state === 'success' && (
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900" role="status">
+          <div className="flex items-center gap-2 font-semibold text-emerald-800">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-xs text-white">✓</span>
+            Consent Request Sent Successfully!
+          </div>
+          <p className="mt-1 text-emerald-700">{status.message}</p>
+        </div>
+      )}
+
       {status.state === 'error' && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
-          {status.httpStatus && (
-            <span className="mr-2 rounded bg-red-600 px-1.5 py-0.5 font-mono text-xs text-white">{status.httpStatus}</span>
-          )}
-          {status.message}
+        <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
+          <div className="flex items-start gap-2">
+            {status.httpStatus && (
+              <span className="rounded bg-red-600 px-1.5 py-0.5 font-mono text-xs font-bold text-white shrink-0">{status.httpStatus}</span>
+            )}
+            <div className="flex-1 font-medium">{status.message}</div>
+          </div>
           {mode === 'camera' && (
             <button
               type="button"
               onClick={() => setStatus({ state: 'idle' })}
-              className="ml-2 font-medium underline"
+              className="mt-2 text-xs font-semibold underline text-red-700 hover:text-red-900"
             >
               Scan again
             </button>
           )}
           {status.code === 'NO_ACTIVE_CONSENT' && status.qrToken && (
-            <div className="mt-3 flex gap-2 flex-wrap">
+            <div className="mt-4 pt-3 border-t border-red-200/60 flex gap-2.5 flex-wrap">
               <button
                 type="button"
-                onClick={() => setStatus({ ...status, showConsentRequest: true })}
-                className="rounded bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-teal-500"
+                onClick={() => setStatus({ ...status, showConsentRequest: true, showEmergency: false })}
+                className="rounded-md bg-teal-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-teal-800 transition-colors flex items-center gap-1.5"
               >
-                Request Standard Consent
+                <span>🔔</span> Request Standard Consent
               </button>
               <button
                 type="button"
-                onClick={() => setStatus({ ...status, showEmergency: true })}
-                className="rounded bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-red-500"
+                onClick={() => setStatus({ ...status, showEmergency: true, showConsentRequest: false })}
+                className="rounded-md bg-red-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-red-700 transition-colors flex items-center gap-1.5"
               >
-                Request Emergency Break-Glass Access
+                <span>🚨</span> Request Emergency Break-Glass Access
               </button>
             </div>
           )}
@@ -115,9 +128,12 @@ export function ScanPanel({ onClose = () => {} }) {
       {status.showConsentRequest && (
         <QrConsentRequestForm
           qrToken={status.qrToken}
-          onClose={() => setStatus({ state: 'idle' })}
+          onClose={() => setStatus({ ...status, showConsentRequest: false })}
           onSuccess={() => {
-            setStatus({ state: 'error', message: 'Request sent successfully! Waiting for patient approval.', httpStatus: 200 })
+            setStatus({
+              state: 'success',
+              message: 'The patient has received your consent request notification. They can approve it from their Consent page to grant you access.',
+            })
           }}
         />
       )}
@@ -197,11 +213,15 @@ function QrConsentRequestForm({ qrToken, onClose, onSuccess }) {
           <input required minLength={3} maxLength={200} value={reason} onChange={e => setReason(e.target.value)} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="Why you need access" />
         </div>
       </div>
-      {error && <div className="text-sm text-red-600">{error.message}</div>}
+      {error && (
+        <div className="rounded border border-red-200 bg-red-50 p-2.5 text-sm text-red-700">
+          {error.message || 'Failed to submit request.'}
+        </div>
+      )}
       <div className="flex justify-end gap-2 pt-2">
         <button type="button" onClick={onClose} className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-100">Cancel</button>
         <button type="submit" disabled={busy || reason.trim().length < 3} className="rounded-md bg-teal-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-teal-800 disabled:opacity-50">
-          {busy ? 'Sending...' : 'Send Request'}
+          {busy ? 'Sending Request...' : 'Send Request'}
         </button>
       </div>
     </form>

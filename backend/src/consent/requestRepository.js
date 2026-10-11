@@ -33,7 +33,7 @@ export async function createRequest({ patientId, clinicianId, scope, reason, dur
     INSERT INTO clinical.consent_requests
       (patient_id, clinician_id, scope, reason, requested_duration, expires_at)
     VALUES
-      ($1, $2, $3, $4, $5, now() + interval '7 days')
+      ($1, $2, $3, $4, ($5)::interval, now() + interval '7 days')
     RETURNING id
   `, [patientId, clinicianId, scope, reason, duration])
   return rows[0].id
