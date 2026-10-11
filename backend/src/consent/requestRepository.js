@@ -7,9 +7,9 @@ const SELECT = `
          f.name AS facility_name, f.district AS facility_district,
          p.mrn AS patient_mrn
     FROM clinical.consent_requests cr
-    JOIN clinical.clinicians c ON c.id = cr.clinician_id
-    JOIN clinical.facilities f ON f.id = c.facility_id
-    JOIN clinical.patients p ON p.id = cr.patient_id
+    LEFT JOIN clinical.clinicians c ON c.id = cr.clinician_id
+    LEFT JOIN clinical.facilities f ON f.id = c.facility_id
+    LEFT JOIN clinical.patients p ON p.id = cr.patient_id
 `
 
 export async function findByPatientId(patientId) {
@@ -48,22 +48,43 @@ export async function resolveRequest(id, status, resolvedBy, consentRecordId = n
   return rowCount === 1
 }
 
+function parseDurationDays(dur) {
+  if (!dur) return null
+  if (typeof dur === 'number') return dur
+  if (typeof dur === 'object') {
+    let days = dur.days || 0
+    if (dur.months) days += dur.months * 30
+    if (dur.years) days += dur.years * 365
+    return days > 0 ? days : null
+  }
+  if (typeof dur === 'string') {
+    const match = dur.match(/\d+/)
+    return match ? parseInt(match[0], 10) : null
+  }
+  return null
+}
+
 export function toRequest(r) {
   const iso = (v) => (v ? new Date(v).toISOString() : null)
+  const clinicianName = `Dr. ${r.first_name || ''} ${r.last_name || ''}`.trim()
   return {
     id: r.id,
     patientId: r.patient_id,
     patientMrn: r.patient_mrn,
     clinician: {
       id: r.clinician_id,
-      name: `Dr. ${r.first_name} ${r.last_name}`,
+      name: clinicianName,
       specialty: r.specialty,
       facility: r.facility_name,
       district: r.facility_district,
     },
+    clinicianName,
+    clinicianSpecialty: r.specialty,
+    clinicianFacility: r.facility_name,
+    clinicianDistrict: r.facility_district,
     scope: r.scope,
     reason: r.reason,
-    requestedDurationDays: r.requested_duration ? parseInt(r.requested_duration.days || r.requested_duration.split(' ')[0], 10) : null,
+    requestedDurationDays: parseDurationDays(r.requested_duration),
     status: r.status,
     createdAt: iso(r.created_at),
     expiresAt: iso(r.expires_at),

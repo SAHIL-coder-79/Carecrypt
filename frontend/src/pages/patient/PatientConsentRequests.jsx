@@ -13,8 +13,8 @@ export function PatientConsentRequests({ patientId, onResolved }) {
   const [busy, setBusy] = useState(false)
   const [reqError, setReqError] = useState(null)
 
-  if (loading && !data) return <LoadingState label="Loading requests..." />
-  if (error) return <Alert tone="danger">{error.message}</Alert>
+  if (loading && !data) return null
+  if (error) return null
 
   const requests = data?.requests ?? []
   const pending = requests.filter(r => r.status === 'PENDING')
@@ -54,9 +54,11 @@ export function PatientConsentRequests({ patientId, onResolved }) {
         <Card key={r.id} className="border-l-4 border-l-amber-500">
           <div className="flex justify-between items-start mb-2">
             <div>
-              <h3 className="font-semibold text-lg">{r.clinicianName}</h3>
+              <h3 className="font-semibold text-lg">{r.clinicianName || r.clinician?.name || 'Clinician'}</h3>
               <p className="text-sm text-slate-600">
-                {r.clinicianSpecialty} {r.clinicianFacility ? `· ${r.clinicianFacility}` : ''} {r.clinicianDistrict ? `· ${r.clinicianDistrict}` : ''}
+                {r.clinicianSpecialty || r.clinician?.specialty || ''}{' '}
+                {(r.clinicianFacility || r.clinician?.facility) ? `· ${r.clinicianFacility || r.clinician?.facility}` : ''}{' '}
+                {(r.clinicianDistrict || r.clinician?.district) ? `· ${r.clinicianDistrict || r.clinician?.district}` : ''}
               </p>
             </div>
             <span className="text-xs text-slate-500">{formatDate(r.createdAt)}</span>
