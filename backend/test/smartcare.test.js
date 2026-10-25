@@ -179,6 +179,90 @@ describe('SmartCare Assist', { skip }, () => {
       assert.deepEqual(res.body.contextUsed.withheldByConsent, ['visit history', 'previous diagnoses'])
       assert.ok(res.body.contextUsed.chronicConditions.length > 0, 'summary data is still used')
     })
+
+    test('incorporates verified lab observations and distinguishes pending unverified OCR extractions', async () => {
+      // Clean previous test observations for isolation
+      await query('DELETE FROM clinical.lab_observations WHERE patient_id = $1', [ids['CC-000003']])
+
+      // 1. Upload a test lab report to CC-000003
+      const { rows: docRows } = await query(
+        `INSERT INTO clinical.medical_documents
+           (patient_id, uploaded_by, document_type, original_file_name, mime_type, file_size_bytes, storage_key, sha256_checksum, status)
+         VALUES ($1, $2, 'LAB_REPORT', 'lab_cbc.png', 'image/png', 1024, $3, $4, 'READY')
+         RETURNING id`,
+        [
+          ids['CC-000003'],
+          await userId(USERS.CLINICIAN),
+          `storage_${Date.now()}_lab.png`,
+          'a'.repeat(64),
+        ],
+      )
+      const docId = docRows[0].id
+
+      const { rows: ocrRows } = await query(
+        `INSERT INTO clinical.document_ocr_runs
+           (document_id, patient_id, engine_name, engine_version, status, page_count, recognized_text, confidence_score)
+         VALUES ($1, $2, 'Tesseract.js', '7.0.0', 'READY', 1, 'Sample', 92.5)
+         RETURNING id`,
+        [docId, ids['CC-000003']],
+      )
+      const ocrId = ocrRows[0].id
+
+      const { rows: extRows } = await query(
+        `INSERT INTO clinical.document_extraction_runs
+           (document_id, ocr_run_id, patient_id, panel_type, parser_version, status, observations_count)
+         VALUES ($1, $2, $3, 'CBC', '1.0.0', 'READY', 2)
+         RETURNING id`,
+        [docId, ocrId, ids['CC-000003']],
+      )
+      const extId = extRows[0].id
+
+      // Insert one VERIFIED observation (abnormal hemoglobin)
+      await query(
+        `INSERT INTO clinical.lab_observations
+           (patient_id, document_id, ocr_run_id, extraction_run_id, panel_type, test_name, standard_code,
+            value_numeric, value_text, unit, reference_range, reference_low, reference_high, is_abnormal,
+            report_date, ocr_confidence, extraction_confidence, verification_status, verified_by, verified_at)
+         VALUES ($1, $2, $3, $4, 'CBC', 'Hemoglobin', '718-7', 9.5, '9.5', 'g/dL', '12.0 - 17.5', 12.0, 17.5, true,
+                 '2026-10-15', 94.0, 100.0, 'VERIFIED', $5, now())`,
+        [ids['CC-000003'], docId, ocrId, extId, await userId(USERS.CLINICIAN)],
+      )
+
+      // Insert one UNVERIFIED observation (pending OCR extraction)
+      await query(
+        `INSERT INTO clinical.lab_observations
+           (patient_id, document_id, ocr_run_id, extraction_run_id, panel_type, test_name, standard_code,
+            value_numeric, value_text, unit, reference_range, reference_low, reference_high, is_abnormal,
+            report_date, ocr_confidence, extraction_confidence, verification_status)
+         VALUES ($1, $2, $3, $4, 'CBC', 'Platelet Count', '777-3', 280000, '280000', '/uL', '150000 - 450000', 150000, 450000, false,
+                 '2026-10-15', 88.0, 100.0, 'UNVERIFIED')`,
+        [ids['CC-000003'], docId, ocrId, extId],
+      )
+
+      const res = await analyze(tokens.CLINICIAN, 'CC-000003')
+      assert.equal(res.status, 200)
+
+      // 1. Transparent DCI heuristic labeling
+      assert.ok(res.body.confidence.meaning)
+      assert.ok(res.body.confidence.components)
+      assert.ok(res.body.confidence.components.labEvidenceBonus > 0)
+
+      // 2. Risk Indicators clearly differentiate verified lab evidence from pending unverified notices
+      const labIndicators = res.body.riskIndicators.filter((r) => r.source === 'laboratory_verified')
+      assert.ok(labIndicators.length > 0)
+      assert.ok(labIndicators.some((i) => i.level === 'HIGH' && i.message.includes('Verified abnormal Hemoglobin: 9.5 g/dL')))
+      assert.ok(labIndicators.some((i) => i.message.includes('Verified by attending clinician')))
+
+      const unverifiedNotice = res.body.riskIndicators.find((r) => r.source === 'laboratory_unverified')
+      assert.ok(unverifiedNotice)
+      assert.ok(unverifiedNotice.message.includes('pending unverified OCR observation(s) exist on file'))
+      assert.ok(unverifiedNotice.message.includes('excluded from clinical decision scoring until verified'))
+
+      // 3. contextUsed summary includes verified labs and pending count
+      assert.ok(res.body.contextUsed.verifiedLaboratoryObservations.length > 0)
+      assert.equal(res.body.contextUsed.verifiedLaboratoryObservations[0].testName, 'Hemoglobin')
+      assert.equal(res.body.contextUsed.pendingUnverifiedLabCount, 1)
+    })
   })
 
   describe('authorization', () => {

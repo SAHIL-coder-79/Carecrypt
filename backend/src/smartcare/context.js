@@ -1,4 +1,5 @@
 import * as repo from '../patients/repository.js'
+import * as docRepo from '../documents/repository.js'
 import { sectionsFor } from '../patients/access.js'
 
 // Loads the parts of the longitudinal record SmartCare may use, limited to what
@@ -6,12 +7,13 @@ import { sectionsFor } from '../patients/access.js'
 // through the summary in contextUsed.
 export async function loadPatientContext(patientId, grant) {
   const sections = sectionsFor(grant.scope)
-  const [patient, chronic, allergies, medications, visits] = await Promise.all([
+  const [patient, chronic, allergies, medications, visits, labObservations] = await Promise.all([
     repo.getPatient(patientId),
     repo.getChronicConditions(patientId),
     repo.getAllergies(patientId),
     repo.getMedicationHistory(patientId),
     sections.visitHistory ? repo.getVisits(patientId, { limit: 20 }) : Promise.resolve(null),
+    sections.visitHistory ? docRepo.listLabObservationsByPatient(patientId) : Promise.resolve([]),
   ])
 
   return {
@@ -21,5 +23,6 @@ export async function loadPatientContext(patientId, grant) {
     allergies,
     activeMedications: medications.filter((m) => m.is_active),
     visits, // null when the consent scope does not include visit history
+    labObservations: labObservations || [],
   }
 }

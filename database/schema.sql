@@ -417,6 +417,138 @@ CREATE TABLE clinical.visit_medications (
 CREATE INDEX visit_medications_medication_idx ON clinical.visit_medications (medication_code);
 
 -- -----------------------------------------------------------------------------
+-- clinical: medical documents
+-- Secure medical document storage metadata for lab reports, scans, and notes.
+-- -----------------------------------------------------------------------------
+
+CREATE TYPE clinical.document_type AS ENUM (
+  'LAB_REPORT',
+  'PRESCRIPTION',
+  'XRAY',
+  'ECG',
+  'CT_SCAN',
+  'MRI',
+  'DISCHARGE_SUMMARY',
+  'OTHER'
+);
+
+CREATE TYPE clinical.document_status AS ENUM (
+  'PENDING',
+  'PROCESSING',
+  'READY',
+  'FAILED'
+);
+
+CREATE TABLE clinical.medical_documents (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id          uuid NOT NULL REFERENCES clinical.patients (id) ON DELETE CASCADE,
+  uploaded_by         uuid NOT NULL REFERENCES identity.users (id),
+  visit_id            uuid REFERENCES clinical.visits (id) ON DELETE SET NULL,
+  document_type       clinical.document_type NOT NULL,
+  original_file_name  text NOT NULL,
+  mime_type           text NOT NULL,
+  file_size_bytes     bigint NOT NULL,
+  storage_key         text NOT NULL UNIQUE,
+  sha256_checksum     char(64) NOT NULL,
+  status              clinical.document_status NOT NULL DEFAULT 'READY',
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  updated_at          timestamptz NOT NULL DEFAULT now(),
+  deleted_at          timestamptz,
+  CONSTRAINT medical_documents_size_positive CHECK (file_size_bytes > 0),
+  CONSTRAINT medical_documents_sha256_format CHECK (sha256_checksum ~ '^[0-9a-f]{64}$')
+);
+CREATE INDEX idx_medical_documents_patient ON clinical.medical_documents (patient_id, created_at DESC)
+  WHERE deleted_at IS NULL;
+CREATE INDEX idx_medical_documents_visit ON clinical.medical_documents (visit_id)
+  WHERE visit_id IS NOT NULL AND deleted_at IS NULL;
+CREATE TRIGGER medical_documents_set_updated_at BEFORE UPDATE ON clinical.medical_documents
+  FOR EACH ROW EXECUTE FUNCTION util.set_updated_at();
+
+CREATE TABLE clinical.document_ocr_runs (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id         uuid NOT NULL REFERENCES clinical.medical_documents (id) ON DELETE CASCADE,
+  patient_id          uuid NOT NULL REFERENCES clinical.patients (id) ON DELETE CASCADE,
+  engine_name         text NOT NULL,
+  engine_version      text NOT NULL,
+  status              clinical.document_status NOT NULL DEFAULT 'READY',
+  page_count          smallint NOT NULL DEFAULT 1,
+  recognized_text     text,
+  confidence_score    numeric(5, 2),
+  blocks_json         jsonb NOT NULL DEFAULT '[]'::jsonb,
+  error_message       text,
+  processing_ms       integer,
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  updated_at          timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT document_ocr_confidence_range CHECK (confidence_score IS NULL OR (confidence_score >= 0 AND confidence_score <= 100))
+);
+CREATE INDEX idx_document_ocr_doc ON clinical.document_ocr_runs (document_id, created_at DESC);
+CREATE INDEX idx_document_ocr_patient ON clinical.document_ocr_runs (patient_id, created_at DESC);
+CREATE TRIGGER document_ocr_set_updated_at BEFORE UPDATE ON clinical.document_ocr_runs
+  FOR EACH ROW EXECUTE FUNCTION util.set_updated_at();
+
+CREATE TYPE clinical.observation_status AS ENUM ('UNVERIFIED', 'VERIFIED', 'REJECTED');
+
+CREATE TABLE clinical.document_extraction_runs (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id         uuid NOT NULL REFERENCES clinical.medical_documents (id) ON DELETE CASCADE,
+  ocr_run_id          uuid NOT NULL REFERENCES clinical.document_ocr_runs (id) ON DELETE CASCADE,
+  patient_id          uuid NOT NULL REFERENCES clinical.patients (id) ON DELETE CASCADE,
+  panel_type          text NOT NULL,
+  parser_version      text NOT NULL,
+  status              clinical.document_status NOT NULL DEFAULT 'READY',
+  observations_count  smallint NOT NULL DEFAULT 0,
+  raw_findings_json   jsonb NOT NULL DEFAULT '[]'::jsonb,
+  error_message       text,
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  updated_at          timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_doc_extraction_doc ON clinical.document_extraction_runs (document_id, created_at DESC);
+CREATE INDEX idx_doc_extraction_patient ON clinical.document_extraction_runs (patient_id, created_at DESC);
+CREATE TRIGGER doc_extraction_set_updated_at BEFORE UPDATE ON clinical.document_extraction_runs
+  FOR EACH ROW EXECUTE FUNCTION util.set_updated_at();
+
+CREATE TABLE clinical.lab_observations (
+  id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id            uuid NOT NULL REFERENCES clinical.patients (id) ON DELETE CASCADE,
+  document_id           uuid NOT NULL REFERENCES clinical.medical_documents (id) ON DELETE CASCADE,
+  ocr_run_id            uuid NOT NULL REFERENCES clinical.document_ocr_runs (id) ON DELETE CASCADE,
+  extraction_run_id     uuid NOT NULL REFERENCES clinical.document_extraction_runs (id) ON DELETE CASCADE,
+  panel_type            text NOT NULL,
+  test_name             text NOT NULL,
+  standard_code         text,
+  value_numeric         numeric(10, 3),
+  value_text            text NOT NULL,
+  unit                  text,
+  reference_range       text,
+  reference_low         numeric(10, 3),
+  reference_high        numeric(10, 3),
+  is_abnormal           boolean,
+  report_date           date,
+  source_page           smallint NOT NULL DEFAULT 1,
+  bounding_box          jsonb,
+  source_line_text      text,
+  ocr_confidence        numeric(5, 2),
+  extraction_confidence numeric(5, 2) NOT NULL,
+  verification_status   clinical.observation_status NOT NULL DEFAULT 'UNVERIFIED',
+  verified_by           uuid REFERENCES identity.users (id),
+  verified_at           timestamptz,
+  verification_note     text,
+  created_at            timestamptz NOT NULL DEFAULT now(),
+  updated_at            timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT lab_obs_ocr_conf_check CHECK (ocr_confidence IS NULL OR (ocr_confidence >= 0 AND ocr_confidence <= 100)),
+  CONSTRAINT lab_obs_ext_conf_check CHECK (extraction_confidence >= 0 AND extraction_confidence <= 100),
+  CONSTRAINT lab_obs_verification_valid CHECK (
+    (verification_status = 'UNVERIFIED' AND verified_by IS NULL AND verified_at IS NULL)
+    OR (verification_status IN ('VERIFIED', 'REJECTED') AND verified_by IS NOT NULL AND verified_at IS NOT NULL)
+  )
+);
+CREATE INDEX idx_lab_obs_patient ON clinical.lab_observations (patient_id, test_name, created_at DESC);
+CREATE INDEX idx_lab_obs_doc ON clinical.lab_observations (document_id);
+CREATE INDEX idx_lab_obs_status ON clinical.lab_observations (patient_id, verification_status);
+CREATE TRIGGER lab_obs_set_updated_at BEFORE UPDATE ON clinical.lab_observations
+  FOR EACH ROW EXECUTE FUNCTION util.set_updated_at();
+
+-- -----------------------------------------------------------------------------
 -- clinical: consent
 -- A patient grants a specific clinician access to their record, with a scope and
 -- an optional expiry. A consent is in force when it is not revoked and not expired.

@@ -38,6 +38,7 @@ function assess(input) {
     medicalHistory = [],
     currentMedications = [],
     allergies = [],
+    verifiedLabs = [],
   } = input
 
   const maternal = maternalRiskEngine.evaluateMaternalRisk({ age, symptoms, medicalHistory, vitals })
@@ -54,7 +55,7 @@ function assess(input) {
   })
   // `age` is passed through so the escalation rules that use it can apply.
   const escalation = escalationEngine.determineEscalation(base, maternal, { symptoms, severity, vitals, age }, {})
-  const confidence = confidenceEngine.calculateConfidence({ age, symptoms, vitals }, base, maternal, escalation)
+  const confidence = confidenceEngine.calculateConfidence({ age, symptoms, vitals, verifiedLabs }, base, maternal, escalation)
   const differential = riskEngine.getDifferentialDiagnosis(symptoms)
 
   return { engine: ENGINE, base, maternal, escalation, confidence, differential }

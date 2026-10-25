@@ -16,10 +16,15 @@ import ServerRefusal from '../../components/ServerRefusal.jsx'
 import { Alert, Badge, StatusBadge, Button, ButtonLink, Card, LoadingState, Withheld } from '../../components/ui.jsx'
 import { formatDate, SCOPE, titleCase } from '../../lib/format.js'
 import { useApiData } from '../../lib/useApiData.js'
+import { DownloadReportButton } from '../../components/record/DownloadReportButton.jsx'
+import { DocumentsAndOcrPanel } from '../../components/record/DocumentsAndOcrPanel.jsx'
+import { ReportAnalyzerPanel } from '../../components/record/ReportAnalyzerPanel.jsx'
 
 const TABS = [
   ['timeline', 'Timeline'],
   ['visits', 'Visits'],
+  ['analyzer', 'Report Analysis'],
+  ['documents', 'Documents & Reports'],
   ['diagnoses', 'Diagnoses'],
   ['medications', 'Medications'],
   ['allergies', 'Allergies & conditions'],
@@ -126,6 +131,8 @@ export default function PatientWorkspace() {
             <Withheld scope={scopeLabel} />
           ))}
         {tab === 'visits' && <VisitHistory visits={patient.visitHistory} scopeLabel={scopeLabel} openVisitId={newVisitId} />}
+        {tab === 'analyzer' && <ReportAnalyzerPanel patientId={patient.id} accessScope={access.scope} />}
+        {tab === 'documents' && <DocumentsAndOcrPanel patientId={patient.id} accessScope={access.scope} />}
         {tab === 'diagnoses' &&
           (patient.visitHistory ? <DiagnosisHistory visits={patient.visitHistory} /> : <Withheld scope={scopeLabel} />)}
         {tab === 'medications' && <MedicationsCard medications={patient.medications} scopeLabel={scopeLabel} />}
@@ -193,6 +200,7 @@ function PatientHeader({ patient, access, canAddVisit, onAddVisit, refreshing })
         </div>
         <div className="flex flex-col items-end gap-1">
           <div className="flex flex-wrap justify-end gap-2">
+            <DownloadReportButton patientId={patient.id} />
             <ButtonLink to={`/clinician/smartcare?patient=${patient.id}`} variant="secondary">
               <SparkIcon className="h-4 w-4" />
               SmartCare workspace

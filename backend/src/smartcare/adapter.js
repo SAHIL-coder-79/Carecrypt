@@ -103,6 +103,10 @@ export function analyze(request, context, now = new Date()) {
     ...(v.systolic != null && { bp_systolic: v.systolic, bp_diastolic: v.diastolic, bp: `${v.systolic}/${v.diastolic}` }),
   }
 
+  const allLabs = context.labObservations ?? []
+  const verifiedLabs = allLabs.filter((l) => l.verification_status === 'VERIFIED')
+  const unverifiedLabs = allLabs.filter((l) => l.verification_status !== 'VERIFIED')
+
   const raw = assess({
     age: patient.age_years,
     symptoms: symptomCodes,
@@ -112,6 +116,7 @@ export function analyze(request, context, now = new Date()) {
     medicalHistory: [...historyKeys],
     currentMedications: engineMedications,
     allergies: context.allergies.map((a) => a.allergen),
+    verifiedLabs,
   })
 
   // ---- Possible conditions (never a diagnosis)
@@ -194,6 +199,36 @@ export function analyze(request, context, now = new Date()) {
 
   for (const w of raw.base.warnings) add('HIGH', 'medication', w)
 
+  // Laboratory Observations Evidence (clearly distinguishing verified from pending OCR extractions)
+  for (const obs of verifiedLabs) {
+    const dateStr = obs.report_date ? ` (${fmtDate(obs.report_date)})` : ''
+    const numVal = obs.value_numeric != null ? Number(obs.value_numeric) : null
+    const valStr = `${numVal !== null ? numVal : obs.value_text} ${obs.unit || ''}`.trim()
+    const refStr = obs.reference_range ? ` [Ref: ${obs.reference_range}]` : ''
+
+    if (obs.is_abnormal) {
+      add(
+        'HIGH',
+        'laboratory_verified',
+        `Verified abnormal ${obs.test_name}: ${valStr}${refStr}${dateStr}. Source document: ${obs.document_id.slice(0, 8)}... (Verified by attending clinician).`,
+      )
+    } else {
+      add(
+        'INFO',
+        'laboratory_verified',
+        `Verified normal ${obs.test_name}: ${valStr}${refStr}${dateStr}.`,
+      )
+    }
+  }
+
+  if (unverifiedLabs.length > 0) {
+    add(
+      'INFO',
+      'laboratory_unverified',
+      `Notice: ${unverifiedLabs.length} pending unverified OCR observation(s) exist on file. Pending extractions are excluded from clinical decision scoring until verified by an authorized clinician.`,
+    )
+  }
+
   // ---- Recommendations
   const allergyClasses = new Map(context.allergies.filter((a) => a.drug_class).map((a) => [a.drug_class, a]))
   const recommendations = []
@@ -265,6 +300,14 @@ export function analyze(request, context, now = new Date()) {
       visitsConsidered: visits.length,
       activeMedications: [...new Set(context.activeMedications.map((m) => m.generic_name))],
       allergies: context.allergies.map((a) => a.allergen),
+      verifiedLaboratoryObservations: verifiedLabs.map((l) => ({
+        testName: l.test_name,
+        value: `${l.value_numeric !== null ? l.value_numeric : l.value_text} ${l.unit || ''}`.trim(),
+        isAbnormal: l.is_abnormal,
+        verifiedAt: l.verified_at,
+        sourceDocument: l.document_id,
+      })),
+      pendingUnverifiedLabCount: unverifiedLabs.length,
       clinicianReported: { history: request.relevantHistory, medications: request.medications },
       withheldByConsent: context.visits === null ? ['visit history', 'previous diagnoses'] : [],
     },

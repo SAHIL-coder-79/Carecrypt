@@ -14,6 +14,9 @@ import { CardIcon, HistoryIcon } from '../components/icons.jsx'
 import { Badge, ButtonLink, LoadingState } from '../components/ui.jsx'
 import { SCOPE, titleCase } from '../lib/format.js'
 import { PatientConsentRequests } from './patient/PatientConsentRequests.jsx'
+import { DownloadReportButton } from '../components/record/DownloadReportButton.jsx'
+import { DocumentsAndOcrPanel } from '../components/record/DocumentsAndOcrPanel.jsx'
+import { ReportAnalyzerPanel } from '../components/record/ReportAnalyzerPanel.jsx'
 
 export default function PatientRecordPage() {
   const { patientId } = useParams()
@@ -61,7 +64,9 @@ export default function PatientRecordPage() {
             <ConditionsCard conditions={patient.chronicConditions} />
           </div>
           <MedicationsCard medications={patient.medications} scopeLabel={scopeLabel} />
+          <ReportAnalyzerPanel patientId={patient.id} accessScope={access.scope} />
           <VisitHistory visits={patient.visitHistory} scopeLabel={scopeLabel} />
+          <DocumentsAndOcrPanel patientId={patient.id} accessScope={access.scope} />
         </div>
         <div className="space-y-6">
           <DemographicsCard demographics={patient.demographics} access={access} scopeLabel={scopeLabel} />
@@ -110,18 +115,21 @@ function RecordHeader({ patient, access }) {
         <p className="mt-1 max-w-xs text-xs text-slate-500">
           {access.via === 'SELF' ? 'You can see everything held about you.' : SCOPE[access.scope].detail}
         </p>
-        {access.via === 'SELF' && (
-          <div className="mt-3 flex flex-wrap justify-end gap-2">
-            <ButtonLink to="/patient/card" variant="secondary" size="sm">
-              <CardIcon className="h-4 w-4" />
-              My CareCrypt card
-            </ButtonLink>
-            <ButtonLink to="/patient/access-history" variant="secondary" size="sm">
-              <HistoryIcon className="h-4 w-4" />
-              Who accessed it
-            </ButtonLink>
-          </div>
-        )}
+        <div className="mt-3 flex flex-wrap justify-end gap-2">
+          <DownloadReportButton patientId={patient.id} />
+          {access.via === 'SELF' && (
+            <>
+              <ButtonLink to="/patient/card" variant="secondary" size="sm">
+                <CardIcon className="h-4 w-4" />
+                My CareCrypt card
+              </ButtonLink>
+              <ButtonLink to="/patient/access-history" variant="secondary" size="sm">
+                <HistoryIcon className="h-4 w-4" />
+                Who accessed it
+              </ButtonLink>
+            </>
+          )}
+        </div>
       </div>
     </section>
   )

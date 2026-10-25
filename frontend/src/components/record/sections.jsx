@@ -371,3 +371,88 @@ export function RecentActivity({ events, isSelf }) {
     </Card>
   )
 }
+
+export function LabObservationsSummaryCard({ observations = [], scopeLabel, onViewAll }) {
+  if (!observations || observations.length === 0) {
+    return (
+      <Card title="Verified Lab Observations">
+        <EmptyState>No verified or attested laboratory values recorded.</EmptyState>
+      </Card>
+    )
+  }
+
+  return (
+    <Card
+      title="Verified Lab Observations"
+      subtitle="Attested by clinicians under authorized consent scope"
+      action={
+        onViewAll && (
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="text-xs font-medium text-teal-800 hover:underline"
+          >
+            Review all in reports
+          </button>
+        )
+      }
+    >
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-xs">
+          <thead>
+            <tr className="border-b border-slate-200 text-slate-500 font-medium">
+              <th className="pb-2">Test</th>
+              <th className="pb-2">Result</th>
+              <th className="pb-2">Ref Range</th>
+              <th className="pb-2">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {observations.slice(0, 5).map((obs) => (
+              <tr key={obs.id}>
+                <td className="py-2 pr-2 font-medium text-slate-900">{obs.testName}</td>
+                <td className="py-2 pr-2">
+                  <span className={`font-semibold ${obs.isAbnormal ? 'text-red-700' : 'text-slate-800'}`}>
+                    {obs.valueNumeric !== null ? obs.valueNumeric : obs.valueText} {obs.unit || ''}
+                  </span>
+                  {obs.isAbnormal && (
+                    <span className="ml-1 text-[10px] font-semibold text-red-700 bg-red-50 px-1 py-0.5 rounded">
+                      High/Low
+                    </span>
+                  )}
+                </td>
+                <td className="py-2 pr-2 text-slate-500">{obs.referenceRange || '—'} {obs.unit || ''}</td>
+                <td className="py-2">
+                  <Badge
+                    tone={
+                      obs.verificationStatus === 'VERIFIED'
+                        ? 'green'
+                        : obs.verificationStatus === 'CORRECTED'
+                        ? 'teal'
+                        : obs.verificationStatus === 'REJECTED'
+                        ? 'red'
+                        : 'neutral'
+                    }
+                  >
+                    {titleCase(obs.verificationStatus)}
+                  </Badge>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {observations.length > 5 && onViewAll && (
+        <div className="mt-3 pt-2 border-t border-slate-100 text-right">
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="text-xs font-medium text-teal-800 hover:underline"
+          >
+            +{observations.length - 5} more observations…
+          </button>
+        </div>
+      )}
+    </Card>
+  )
+}

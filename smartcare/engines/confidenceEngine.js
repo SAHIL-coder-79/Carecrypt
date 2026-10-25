@@ -64,8 +64,21 @@ function calculateConfidence(patientData, generalRiskDetails, maternalRiskDetail
         reasoning.push('Conflict detected: Severe bleeding reported with stable vitals (-5%)');
     }
 
+    // 5. Verified Laboratory Evidence (Heuristic Boost: up to 10% when verified lab observations corroborate clinical context)
+    // Pending/unverified OCR extractions are explicitly excluded from this boost.
+    const { verifiedLabs = [] } = patientData;
+    let labEvidenceBonus = 0;
+    if (Array.isArray(verifiedLabs) && verifiedLabs.length > 0) {
+        // Each verified lab test adds +0.03 up to max +0.10
+        labEvidenceBonus = Math.min(0.10, verifiedLabs.length * 0.03);
+        reasoning.push(`Verified lab evidence bonus: ${verifiedLabs.length} clinician-verified observation(s) available (+${Math.round(labEvidenceBonus * 100)}%)`);
+    }
+
     // ── Final DCI Calculation ────────────────────────────────────────────────
-    const rawDCI = (completeness * 0.40) + (coherence * 0.30) + (alignment * 0.20) - conflictPenalty;
+    // Heuristic Formula:
+    // rawDCI = (completeness * 0.40) + (coherence * 0.30) + (alignment * 0.20) + labEvidenceBonus - conflictPenalty
+    // Note: DCI is explicitly labelled as a heuristic completeness/consistency index, NOT a calibrated ML probability.
+    const rawDCI = (completeness * 0.40) + (coherence * 0.30) + (alignment * 0.20) + labEvidenceBonus - conflictPenalty;
     const score = Math.max(0, Math.min(100, Math.round(rawDCI * 100)));
 
     // Determine Level
@@ -79,13 +92,15 @@ function calculateConfidence(patientData, generalRiskDetails, maternalRiskDetail
         reasoning,
         dci: {
             score: score,
+            method: 'heuristic',
             components: {
                 completeness: Math.round(completeness * 100),
                 coherence: Math.round(coherence * 100),
                 alignment: Math.round(alignment * 100),
+                labEvidenceBonus: Math.round(labEvidenceBonus * 100),
                 penalty: Math.round(conflictPenalty * 100)
             },
-            label: 'Diagnostic Certainty Index'
+            label: 'Diagnostic Certainty Index (Heuristic)'
         }
     };
 }

@@ -36,6 +36,11 @@ export const env = Object.freeze({
   loginLockoutMinutes: positiveInt(process.env.LOGIN_LOCKOUT_MINUTES, 15),
   loginRateLimitWindowMinutes: positiveInt(process.env.LOGIN_RATE_LIMIT_WINDOW_MINUTES, 15),
   loginRateLimitMax: positiveInt(process.env.LOGIN_RATE_LIMIT_MAX, 20),
+  // Private document storage directory (outside public static serving)
+  storageDirectory: process.env.STORAGE_DIRECTORY
+    ? path.resolve(process.env.STORAGE_DIRECTORY)
+    : path.resolve(backendRoot, 'storage', 'documents'),
+  uploadMaxFileSizeBytes: positiveInt(process.env.UPLOAD_MAX_FILE_SIZE_BYTES, 25 * 1024 * 1024), // 25 MB default
 })
 
 export const isProduction = env.nodeEnv === 'production'

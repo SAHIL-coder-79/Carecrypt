@@ -32,3 +32,6 @@ Thumbs.db
 backend/demo-qr-cards/
 
 .vercel
+
+backend/storage/
+backend/eng.traineddata
