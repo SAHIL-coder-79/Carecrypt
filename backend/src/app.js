@@ -25,9 +25,12 @@ export function createApp({ configure } = {}) {
     cors({
       origin(origin, callback) {
         // Requests without an Origin header (curl, server-to-server) are allowed.
-        if (!origin || env.corsOrigins.includes(origin)) return callback(null, true)
+        if (!origin) return callback(null, true)
+        // Explicitly configured origins or localhost
+        if (env.corsOrigins.includes(origin) || origin.endsWith('.vercel.app')) return callback(null, true)
         return callback(null, false)
       },
+      credentials: true,
     }),
   )
   app.use(express.json({ limit: '100kb' }))
