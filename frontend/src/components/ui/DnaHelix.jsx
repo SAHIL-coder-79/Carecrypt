@@ -45,6 +45,9 @@ export function DnaHelix({ className = "absolute inset-0 pointer-events-none opa
       opacity: 0.4,
     });
 
+    const sphereGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+    const bridgeGeometries = [];
+
     for (let i = 0; i < numBasePairs; i++) {
       const y = (i - numBasePairs / 2) * heightSpacing;
       const angle = i * twist;
@@ -52,14 +55,14 @@ export function DnaHelix({ className = "absolute inset-0 pointer-events-none opa
       // Strand 1
       const x1 = Math.cos(angle) * radius;
       const z1 = Math.sin(angle) * radius;
-      const sphere1 = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), baseMaterial);
+      const sphere1 = new THREE.Mesh(sphereGeometry, baseMaterial);
       sphere1.position.set(x1, y, z1);
       dnaGroup.add(sphere1);
 
       // Strand 2
       const x2 = Math.cos(angle + Math.PI) * radius;
       const z2 = Math.sin(angle + Math.PI) * radius;
-      const sphere2 = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), baseMaterial);
+      const sphere2 = new THREE.Mesh(sphereGeometry, baseMaterial);
       sphere2.position.set(x2, y, z2);
       dnaGroup.add(sphere2);
 
@@ -68,6 +71,7 @@ export function DnaHelix({ className = "absolute inset-0 pointer-events-none opa
         new THREE.Vector3(x1, y, z1),
         new THREE.Vector3(x2, y, z2)
       ]);
+      bridgeGeometries.push(bridgeGeo);
       const bridge = new THREE.Line(bridgeGeo, bridgeMaterial);
       dnaGroup.add(bridge);
     }
@@ -128,7 +132,8 @@ export function DnaHelix({ className = "absolute inset-0 pointer-events-none opa
       if (mountRef.current && renderer.domElement && mountRef.current.contains(renderer.domElement)) {
         mountRef.current.removeChild(renderer.domElement);
       }
-      geometry1?.dispose?.();
+      sphereGeometry.dispose();
+      bridgeGeometries.forEach((bg) => bg.dispose());
       baseMaterial.dispose();
       bridgeMaterial.dispose();
       renderer.dispose();
